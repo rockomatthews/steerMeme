@@ -1,0 +1,17 @@
+{
+  "name": "SteerMeme List",
+  "timestamp": "2025-09-30T00:00:00Z",
+  "version": { "major": 1, "minor": 0, "patch": 0 },
+  "tokens": [
+    {
+      "chainId": 8453,
+      "address": "0xYOUR_TOKEN_ADDRESS",
+      "name": "SteerMeme",
+      "symbol": "STEER",
+      "decimals": 18,
+      "logoURI": "https://YOUR_DOMAIN/steermeme-logo.png"
+    }
+  ]
+}
+
+
