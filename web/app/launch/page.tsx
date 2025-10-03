@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import NextImage from 'next/image';
 import { useAccount, usePublicClient, useWalletClient, useChainId, useSwitchChain } from "wagmi";
 import type { WalletClient, PublicClient, Account } from "viem";
+import { createWalletClient, custom } from "viem";
 import { Clanker } from "clanker-sdk/v4";
 import { base, baseSepolia } from "wagmi/chains";
 
@@ -57,11 +58,9 @@ export default function LaunchPage() {
 			return;
 		}
 		try {
-			const baseWallet = wallet as WalletClient;
-			// Ensure a required Account type for the SDK
-			type RequiredAccountWallet = Omit<WalletClient, 'account'> & { account: Account };
-			const walletForSdk = { ...baseWallet, account: baseWallet.account as Account, chain: activeChain } as RequiredAccountWallet;
-			const clanker = new Clanker({ publicClient, wallet: walletForSdk });
+            const account = wallet.account as Account;
+            const walletForSdk = createWalletClient({ account, chain: activeChain, transport: custom((window as any).ethereum) });
+            const clanker = new Clanker({ publicClient, wallet: walletForSdk });
             const tokenConfig: Record<string, unknown> = {
 				name,
 				symbol,
