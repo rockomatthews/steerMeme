@@ -79,14 +79,14 @@ export default function LaunchPage() {
 				},
 			};
             if (feeType === 'static') {
-                (tokenConfig as any).fees = { type: 'static', clankerFee: Number(clankerFeeBps), pairedFee: Number(pairedFeeBps) };
+                Object.assign(tokenConfig, { fees: { type: 'static', clankerFee: Number(clankerFeeBps), pairedFee: Number(pairedFeeBps) } });
             }
 			const vp = Number(vaultPct);
 			if (vp > 0) {
-                (tokenConfig as any).vault = { percentage: vp, lockupDuration: Number(lockup), vestingDuration: Number(vesting) };
+                Object.assign(tokenConfig, { vault: { percentage: vp, lockupDuration: Number(lockup), vestingDuration: Number(vesting) } });
 			}
 			if (Number(devBuyEth) > 0) {
-                (tokenConfig as any).devBuy = { ethAmount: Number(devBuyEth) };
+                Object.assign(tokenConfig, { devBuy: { ethAmount: Number(devBuyEth) } });
 			}
 			const { txHash, waitForTransaction, error } = await clanker.deploy(tokenConfig);
 			if (error) throw error;
