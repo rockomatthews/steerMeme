@@ -9,7 +9,11 @@
     "clean": "hardhat clean",
     "deploy:base": "hardhat run scripts/deploy.js --network base",
     "deploy:base-sepolia": "hardhat run scripts/deploy.js --network baseSepolia",
-    "tokenlist:update": "node scripts/update-tokenlist.js"
+    "tokenlist:update": "node scripts/update-tokenlist.js",
+    "deploy:miner:base": "hardhat run scripts/deploy-miner.js --network base",
+    "deploy:miner:base-sepolia": "hardhat run scripts/deploy-miner.js --network baseSepolia",
+    "fund:miner:base": "hardhat run scripts/fund-miner.js --network base",
+    "fund:miner:base-sepolia": "hardhat run scripts/fund-miner.js --network baseSepolia"
   },
   "keywords": [],
   "author": "",
