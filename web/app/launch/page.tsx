@@ -10,7 +10,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import NextImage from 'next/image';
 import { useAccount, usePublicClient, useWalletClient, useChainId, useSwitchChain } from "wagmi";
-import type { WalletClient, PublicClient } from "viem";
+import type { WalletClient, PublicClient, Account } from "viem";
 import { Clanker } from "clanker-sdk/v4";
 import { base, baseSepolia } from "wagmi/chains";
 
@@ -57,9 +57,10 @@ export default function LaunchPage() {
 			return;
 		}
 		try {
-            const walletWithAccount = wallet as WalletClient & { account: NonNullable<WalletClient['account']> };
-            const walletForSdk = { ...walletWithAccount, chain: activeChain } as WalletClient;
-            const clanker = new Clanker({ publicClient, wallet: walletForSdk });
+			type SdkWallet = Omit<WalletClient, 'account'> & { account: NonNullable<WalletClient['account']> };
+			const baseWallet = wallet as WalletClient;
+			const walletForSdk = { ...baseWallet, account: baseWallet.account as Account, chain: activeChain } as SdkWallet;
+			const clanker = new Clanker({ publicClient, wallet: walletForSdk as unknown as WalletClient });
             const tokenConfig: Record<string, unknown> = {
 				name,
 				symbol,
