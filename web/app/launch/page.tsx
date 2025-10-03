@@ -8,6 +8,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
+import NextImage from 'next/image';
 import { useAccount, usePublicClient, useWalletClient, useChainId, useSwitchChain } from "wagmi";
 import type { WalletClient, PublicClient } from "viem";
 import { Clanker } from "clanker-sdk/v4";
@@ -56,10 +57,10 @@ export default function LaunchPage() {
 			return;
 		}
 		try {
-			const walletWithAccount = wallet as WalletClient & { account: NonNullable<WalletClient['account']> };
-			const walletForSdk = { ...walletWithAccount, chain: activeChain } as unknown as WalletClient;
-			const clanker = new Clanker({ publicClient: publicClient as unknown as any, wallet: walletForSdk as unknown as any });
-			const tokenConfig: any = {
+            const walletWithAccount = wallet as WalletClient & { account: NonNullable<WalletClient['account']> };
+            const walletForSdk = { ...walletWithAccount, chain: activeChain } as WalletClient;
+            const clanker = new Clanker({ publicClient, wallet: walletForSdk });
+            const tokenConfig: Record<string, unknown> = {
 				name,
 				symbol,
 				tokenAdmin: address,
@@ -77,15 +78,15 @@ export default function LaunchPage() {
 					],
 				},
 			};
-			if (feeType === 'static') {
-				tokenConfig.fees = { type: 'static', clankerFee: Number(clankerFeeBps), pairedFee: Number(pairedFeeBps) };
-			}
+            if (feeType === 'static') {
+                (tokenConfig as any).fees = { type: 'static', clankerFee: Number(clankerFeeBps), pairedFee: Number(pairedFeeBps) };
+            }
 			const vp = Number(vaultPct);
 			if (vp > 0) {
-				tokenConfig.vault = { percentage: vp, lockupDuration: Number(lockup), vestingDuration: Number(vesting) };
+                (tokenConfig as any).vault = { percentage: vp, lockupDuration: Number(lockup), vestingDuration: Number(vesting) };
 			}
 			if (Number(devBuyEth) > 0) {
-				tokenConfig.devBuy = { ethAmount: Number(devBuyEth) };
+                (tokenConfig as any).devBuy = { ethAmount: Number(devBuyEth) };
 			}
 			const { txHash, waitForTransaction, error } = await clanker.deploy(tokenConfig);
 			if (error) throw error;
@@ -95,7 +96,7 @@ export default function LaunchPage() {
 			if (waitErr) throw waitErr;
 			setDeployed(tokenAddr);
 			setStatus("Deployed");
-		} catch (e: unknown) {
+            } catch (e: unknown) {
 			setError(e instanceof Error ? e.message : 'Deployment failed');
 			setStatus("");
 		}
@@ -115,7 +116,7 @@ export default function LaunchPage() {
 			)}
 			<TextField label="Name" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Randy" />
 			<TextField label="Symbol" value={symbol} onChange={(e)=>setSymbol(e.target.value)} placeholder="RANDY" />
-			<input type="file" accept="image/*" onChange={async (e)=>{
+            <input type="file" accept="image/*" onChange={async (e)=>{
 				const f = e.target.files?.[0];
 				if (!f) return;
 				const fd = new FormData();
@@ -135,7 +136,7 @@ export default function LaunchPage() {
 			}} />
 			{image && (
 				<div className="mt-2 border border-white/60 rounded p-2">
-					<img src={image.replace('ipfs://', 'https://ipfs.io/ipfs/')} alt="preview" className="max-h-48 object-contain" />
+                    <NextImage src={image.replace('ipfs://', 'https://ipfs.io/ipfs/')} alt="preview" width={512} height={256} className="w-auto h-48 object-contain" />
 				</div>
 			)}
 			<TextField label="Description" multiline minRows={3} value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="What is your token?" />
@@ -145,7 +146,7 @@ export default function LaunchPage() {
 			<div className="grid grid-cols-2 gap-3">
 				<div>
 					<label className="text-sm">Fee Type</label>
-					<Select value={feeType} onChange={(e)=>setFeeType(e.target.value as any)}>
+                    <Select value={feeType} onChange={(e)=>setFeeType(e.target.value === 'static' ? 'static' : 'default')}>
 						<MenuItem value="default">Dynamic (default)</MenuItem>
 						<MenuItem value="static">Static</MenuItem>
 					</Select>
