@@ -7,8 +7,6 @@ import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
-import Grid from '@mui/material/Grid2';
-import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { useAccount, usePublicClient, useWalletClient, useChainId, useSwitchChain } from "wagmi";
 import type { WalletClient, PublicClient } from "viem";
@@ -97,8 +95,8 @@ export default function LaunchPage() {
 			if (waitErr) throw waitErr;
 			setDeployed(tokenAddr);
 			setStatus("Deployed");
-		} catch (e) {
-			setError(e instanceof Error ? e.message : String(e));
+		} catch (e: unknown) {
+			setError(e instanceof Error ? e.message : 'Deployment failed');
 			setStatus("");
 		}
 	}
@@ -130,8 +128,8 @@ export default function LaunchPage() {
 					if (!res.ok) throw new Error(json?.message || 'Upload failed');
 					setImage(json.uri);
 					setStatus('Image uploaded');
-				} catch (err:any) {
-					setError(err?.message || 'Upload failed');
+				} catch (err: unknown) {
+					setError(err instanceof Error ? err.message : 'Upload failed');
 					setStatus('');
 				}
 			}} />

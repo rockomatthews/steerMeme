@@ -5,11 +5,11 @@ export default function Home() {
 	return (
 		<main className="min-h-dvh flex flex-col items-center justify-center gap-8 p-8">
 			<Image src="/randy.png" alt="Randy" width={128} height={128} priority />
-			<h1 className="text-3xl font-bold">SteerMeme Miner</h1>
-			<p className="opacity-80">Mine faster by staking more Randy.</p>
+			<h1 className="text-3xl font-bold text-yellow-300">Randy Mining</h1>
+			<p className="opacity-80 text-yellow-200">The more you stake, the faster you mine</p>
 			<div className="flex gap-4">
-				<Link href="/miner" className="px-4 py-2 bg-blue-600 text-white rounded">Open Miner</Link>
-				<Link href="/launch" className="px-6 py-3 bg-pink-600 text-white rounded text-xl font-extrabold">Launch your own token!</Link>
+				<Link href="/miner" className="px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Open Miner</Link>
+				<Link href="/launch" className="px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Launch your own token!</Link>
 			</div>
 
 			<div className="w-full h-[500px] mt-8">
