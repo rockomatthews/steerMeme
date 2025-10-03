@@ -63,7 +63,8 @@ export default function LaunchPage() {
             if (!provider) throw new Error('No EIP-1193 provider found');
             const walletForSdk = createWalletClient({ account, chain: activeChain, transport: custom(provider) });
             const clanker = new Clanker({ publicClient, wallet: walletForSdk });
-            const tokenConfig: Record<string, unknown> = {
+            type DeployArg = Parameters<typeof clanker.deploy>[0];
+            const tokenConfig = {
 				name,
 				symbol,
 				tokenAdmin: address,
@@ -80,7 +81,7 @@ export default function LaunchPage() {
 						{ recipient: TREASURY, admin: TREASURY, bps: 200, token: "Paired" },
 					],
 				},
-			};
+            } satisfies Partial<DeployArg> as DeployArg;
             if (feeType === 'static') {
                 Object.assign(tokenConfig, { fees: { type: 'static', clankerFee: Number(clankerFeeBps), pairedFee: Number(pairedFeeBps) } });
             }
