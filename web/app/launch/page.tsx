@@ -57,10 +57,9 @@ export default function LaunchPage() {
 			return;
 		}
 		try {
-			type SdkWallet = Omit<WalletClient, 'account'> & { account: NonNullable<WalletClient['account']> };
-			const baseWallet = wallet as WalletClient;
-			const walletForSdk = { ...baseWallet, account: baseWallet.account as Account, chain: activeChain } as SdkWallet;
-			const clanker = new Clanker({ publicClient, wallet: walletForSdk as unknown as WalletClient });
+            const baseWallet = wallet as WalletClient;
+            const walletForSdk = { ...baseWallet, account: (baseWallet.account as Account), chain: activeChain } as WalletClient;
+            const clanker = new Clanker({ publicClient, wallet: walletForSdk });
             const tokenConfig: Record<string, unknown> = {
 				name,
 				symbol,
