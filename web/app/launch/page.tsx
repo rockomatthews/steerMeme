@@ -10,7 +10,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import NextImage from 'next/image';
 import { useAccount, usePublicClient, useWalletClient, useChainId, useSwitchChain } from "wagmi";
-import type { WalletClient, PublicClient, Account } from "viem";
+import type { PublicClient, Account, EIP1193Provider } from "viem";
 import { createWalletClient, custom } from "viem";
 import { Clanker } from "clanker-sdk/v4";
 import { base, baseSepolia } from "wagmi/chains";
@@ -59,7 +59,9 @@ export default function LaunchPage() {
 		}
 		try {
             const account = wallet.account as Account;
-            const walletForSdk = createWalletClient({ account, chain: activeChain, transport: custom((window as any).ethereum) });
+            const provider = (window as unknown as { ethereum?: EIP1193Provider }).ethereum;
+            if (!provider) throw new Error('No EIP-1193 provider found');
+            const walletForSdk = createWalletClient({ account, chain: activeChain, transport: custom(provider) });
             const clanker = new Clanker({ publicClient, wallet: walletForSdk });
             const tokenConfig: Record<string, unknown> = {
 				name,
