@@ -64,33 +64,36 @@ export default function LaunchPage() {
             const walletForSdk = createWalletClient({ account, chain: activeChain, transport: custom(provider) });
             const clanker = new Clanker({ publicClient, wallet: walletForSdk });
             type DeployArg = Parameters<typeof clanker.deploy>[0];
-            const tokenConfig = {
-				name,
-				symbol,
-				tokenAdmin: address,
-				vanity,
-				image: image || undefined,
-				metadata: {
-					description: description || undefined,
-					socialMediaUrls: [twitter || "", website || ""].filter(Boolean),
-				},
-				context: { interface: 'steermeme' },
-				rewards: {
-					recipients: [
-						{ recipient: address, admin: address, bps: 9800, token: "Paired" },
-						{ recipient: TREASURY, admin: TREASURY, bps: 200, token: "Paired" },
-					],
-				},
-            } satisfies Partial<DeployArg> as DeployArg;
+            const socials: { platform: string; url: string }[] = [];
+            if (twitter) socials.push({ platform: 'twitter', url: twitter });
+            if (website) socials.push({ platform: 'website', url: website });
+            let tokenConfig: DeployArg = {
+                name,
+                symbol,
+                tokenAdmin: address as `0x${string}`,
+                vanity,
+                image: image || undefined,
+                metadata: {
+                    description: description || undefined,
+                    socialMediaUrls: socials,
+                },
+                context: { interface: 'steermeme' },
+                rewards: {
+                    recipients: [
+                        { recipient: address as `0x${string}`, admin: address as `0x${string}`, bps: 9800, token: "Paired" },
+                        { recipient: TREASURY, admin: TREASURY, bps: 200, token: "Paired" },
+                    ],
+                },
+            } as DeployArg;
             if (feeType === 'static') {
-                Object.assign(tokenConfig, { fees: { type: 'static', clankerFee: Number(clankerFeeBps), pairedFee: Number(pairedFeeBps) } });
+                tokenConfig = { ...tokenConfig, fees: { type: 'static', clankerFee: Number(clankerFeeBps), pairedFee: Number(pairedFeeBps) } } as DeployArg;
             }
 			const vp = Number(vaultPct);
 			if (vp > 0) {
-                Object.assign(tokenConfig, { vault: { percentage: vp, lockupDuration: Number(lockup), vestingDuration: Number(vesting) } });
+                tokenConfig = { ...tokenConfig, vault: { percentage: vp, lockupDuration: Number(lockup), vestingDuration: Number(vesting) } } as DeployArg;
 			}
 			if (Number(devBuyEth) > 0) {
-                Object.assign(tokenConfig, { devBuy: { ethAmount: Number(devBuyEth) } });
+                tokenConfig = { ...tokenConfig, devBuy: { ethAmount: Number(devBuyEth) } } as DeployArg;
 			}
 			const { txHash, waitForTransaction, error } = await clanker.deploy(tokenConfig);
 			if (error) throw error;
