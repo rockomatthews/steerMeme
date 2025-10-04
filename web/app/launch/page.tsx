@@ -17,6 +17,14 @@ import { base, baseSepolia } from "wagmi/chains";
 
 const TREASURY: `0x${string}` = "0x57585874DBf39B18df1AD2b829F18D6BFc2Ceb4b";
 
+async function logLaunchError(payload: unknown) {
+    try {
+        await fetch('/api/launch-logs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ts: Date.now(), payload }) })
+    } catch {
+        // no-op
+    }
+}
+
 export default function LaunchPage() {
 	const { address } = useAccount();
 	const publicClient = usePublicClient() as PublicClient;
