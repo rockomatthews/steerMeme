@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
 import miningStaking from '@/lib/MiningStaking.json'
 import memeToken from '@/lib/MemeToken.json'
@@ -38,9 +38,28 @@ export default function MinerPage() {
 
 	const { data: balance } = useBalance({ address, token: TOKEN_ADDRESS })
 
+	// Global emissions and tiers
+	const { data: tiers } = useReadContract({
+		address: MINER_ADDRESS,
+		abi: MINER_ABI,
+		functionName: 'tiers'
+	}) as { data: readonly [bigint[], bigint[]] | undefined }
+
+	const { data: rewardRate } = useReadContract({
+		address: MINER_ADDRESS,
+		abi: MINER_ABI,
+		functionName: 'rewardRatePerSecond'
+	}) as { data: bigint | undefined }
+
+	const { data: totalWeighted } = useReadContract({
+		address: MINER_ADDRESS,
+		abi: MINER_ABI,
+		functionName: 'totalWeightedStake'
+	}) as { data: bigint | undefined }
+
 	// Writes
 	const { writeContract, data: hash } = useWriteContract()
-	const { isLoading: _isMining, isSuccess: _isSuccess } = useWaitForTransactionReceipt({ hash })
+	useWaitForTransactionReceipt({ hash })
 	useEffect(() => setPendingHash(hash), [hash])
 
 	const formattedStake = staked ? formatUnits(staked.staked, TOKEN_DECIMALS) : '0'
@@ -63,13 +82,41 @@ export default function MinerPage() {
 		writeContract({ address: MINER_ADDRESS, abi: MINER_ABI, functionName: 'getReward', args: [] })
 	}
 
+	const explorerBase = chainId === 8453 ? 'https://basescan.org' : 'https://sepolia.basescan.org'
+
+	// Graph data: show relative mining speed = stake * multiplier (scaled)
+	const graphPoints = useMemo(() => {
+		const res: { x: number; y: number }[] = []
+		if (!tiers) return res
+		const [thresholds, multipliers] = tiers
+		if (thresholds.length === 0 || multipliers.length === 0) return res
+		// Build simple step line across thresholds (in whole tokens)
+		const scale = 1e18
+		const max = Number(thresholds[thresholds.length - 1] / BigInt(10 ** TOKEN_DECIMALS)) * 2 || 1000
+		const xs = Array.from({ length: 11 }, (_, i) => Math.floor((max * i) / 10))
+		function currentMult(raw: number) {
+			const stakeWei = BigInt(raw) * BigInt(10 ** TOKEN_DECIMALS)
+			let m = BigInt(scale)
+			for (let i = 0; i < thresholds.length; i++) {
+				if (stakeWei >= thresholds[i]) m = multipliers[i]
+			}
+			return Number(m) / scale
+		}
+		xs.forEach(x => {
+			const y = x * currentMult(x)
+			res.push({ x, y })
+		})
+		return res
+	}, [tiers])
+
+
 	return (
-		<main className="min-h-dvh p-6 mx-auto max-w-xl flex flex-col gap-6">
+		<main className="min-h-dvh p-6 mx-auto max-w-2xl flex flex-col gap-6">
 			<div className="flex items-center gap-3">
 				<Image src="/randy.png" alt="Randy" width={56} height={56} />
 				<div>
-					<h1 className="text-2xl font-bold">Randy Miner</h1>
-					<p className="text-sm opacity-70">Stake Randy to mine faster. More stake → higher multiplier.</p>
+					<h1 className="text-2xl font-bold text-yellow-300">Randy Mining</h1>
+					<p className="text-sm text-yellow-200">The more you stake, the faster you mine</p>
 				</div>
 			</div>
 
@@ -79,19 +126,34 @@ export default function MinerPage() {
 				<div>Balance: {balance ? `${balance.formatted} ${balance.symbol}` : '—'}</div>
 				<div>Staked: {formattedStake}</div>
 				<div>Unclaimed: {formattedEarned}</div>
-				{pendingHash && <a className="text-blue-600" target="_blank" href={`https://sepolia.basescan.org/tx/${pendingHash}`}>View tx</a>}
+				{pendingHash && <a className="text-blue-600" target="_blank" href={`${explorerBase}/tx/${pendingHash}`}>View tx</a>}
 			</div>
 
 			<div className="flex gap-2 items-end">
 				<div className="flex-1">
 					<label className="block text-sm mb-1">Amount</label>
-					<input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.0" className="w-full border rounded px-3 py-2" />
+					<input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.0" className="w-full border rounded px-3 py-2 border-yellow-400 bg-yellow-400/10 text-yellow-200" />
 				</div>
-				<button onClick={approve} className="px-3 py-2 border rounded">Approve</button>
-				<button onClick={stake} className="px-3 py-2 bg-blue-600 text-white rounded">Stake</button>
-				<button onClick={withdraw} className="px-3 py-2 border rounded">Withdraw</button>
-				<button onClick={claim} className="px-3 py-2 border rounded">Claim</button>
+				<button onClick={approve} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Approve</button>
+				<button onClick={stake} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Stake</button>
+				<button onClick={withdraw} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Withdraw</button>
+				<button onClick={claim} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Claim</button>
 			</div>
+
+			{/* Simple SVG graph of mining speed vs stake */}
+			{graphPoints.length > 0 && (
+				<div className="mt-4 border border-yellow-400/60 rounded p-3">
+					<p className="text-sm text-yellow-200 mb-2">Mining speed grows with stake × multiplier</p>
+					<svg viewBox="0 0 100 40" className="w-full h-48">
+						<polyline
+							fill="none"
+							stroke="#FDE047"
+							strokeWidth="2"
+							points={graphPoints.map((p)=>`${(p.x/graphPoints[graphPoints.length-1].x)*100},${40-(p.y/graphPoints[graphPoints.length-1].y)*38}`).join(' ')}
+						/>
+					</svg>
+				</div>
+			)}
 		</main>
 	)
 }

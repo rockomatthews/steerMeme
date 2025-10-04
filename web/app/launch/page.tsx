@@ -36,8 +36,9 @@ export default function LaunchPage() {
 	const [clankerFeeBps, setClankerFeeBps] = useState("100");
 	const [pairedFeeBps, setPairedFeeBps] = useState("100");
 	const [vaultPct, setVaultPct] = useState("0");
-	const [lockup, setLockup] = useState("0");
-	const [vesting, setVesting] = useState("0");
+	// store days in UI; convert to seconds on submit
+	const [lockupDays, setLockupDays] = useState("0");
+	const [vestingDays, setVestingDays] = useState("0");
 	const [devBuyEth, setDevBuyEth] = useState("0");
 	const [status, setStatus] = useState<string>("");
 	const [txHash, setTxHash] = useState<string>("");
@@ -49,6 +50,20 @@ export default function LaunchPage() {
 		setError("");
 		setTxHash("");
 		setDeployed("");
+		// client-side validation
+		const vaultPctNum = Number(vaultPct || '0')
+		const lockupSec = Math.floor(Number(lockupDays || '0') * 24 * 60 * 60)
+		const vestingSec = Math.floor(Number(vestingDays || '0') * 24 * 60 * 60)
+		if (vaultPctNum < 0 || vaultPctNum > 90) {
+			setStatus(""); setError('Vault % must be between 0 and 90');
+			await logLaunchError({ code: 'validation', message: 'vault percent out of range', vaultPct: vaultPctNum });
+			return;
+		}
+		if (lockupSec > 0 && lockupSec < 604800) { // 7 days min per Clanker
+			setStatus(""); setError('Lockup must be at least 7 days');
+			await logLaunchError({ code: 'validation', message: 'lockup too small', lockupSec });
+			return;
+		}
 		if (!address || !wallet || !publicClient) {
 			setError("Connect wallet");
 			return;
@@ -67,7 +82,7 @@ export default function LaunchPage() {
             const socials: { platform: string; url: string }[] = [];
             if (twitter) socials.push({ platform: 'twitter', url: twitter });
             if (website) socials.push({ platform: 'website', url: website });
-            let tokenConfig: DeployArg = {
+			let tokenConfig: DeployArg = {
                 name,
                 symbol,
                 tokenAdmin: address as `0x${string}`,
@@ -75,7 +90,7 @@ export default function LaunchPage() {
                 image: image || undefined,
                 metadata: {
                     description: description || undefined,
-                    socialMediaUrls: socials,
+					socialMediaUrls: socials,
                 },
                 context: { interface: 'steermeme' },
                 rewards: {
@@ -88,9 +103,9 @@ export default function LaunchPage() {
             if (feeType === 'static') {
                 tokenConfig = { ...tokenConfig, fees: { type: 'static', clankerFee: Number(clankerFeeBps), pairedFee: Number(pairedFeeBps) } } as DeployArg;
             }
-			const vp = Number(vaultPct);
+			const vp = vaultPctNum;
 			if (vp > 0) {
-                tokenConfig = { ...tokenConfig, vault: { percentage: vp, lockupDuration: Number(lockup), vestingDuration: Number(vesting) } } as DeployArg;
+				tokenConfig = { ...tokenConfig, vault: { percentage: vp, lockupDuration: lockupSec, vestingDuration: vestingSec } } as DeployArg;
 			}
 			if (Number(devBuyEth) > 0) {
                 tokenConfig = { ...tokenConfig, devBuy: { ethAmount: Number(devBuyEth) } } as DeployArg;
@@ -106,6 +121,7 @@ export default function LaunchPage() {
             } catch (e: unknown) {
 			setError(e instanceof Error ? e.message : 'Deployment failed');
 			setStatus("");
+			await logLaunchError({ code: 'deploy', message: e instanceof Error ? e.message : String(e) });
 		}
 	}
 
@@ -123,7 +139,7 @@ export default function LaunchPage() {
 			)}
 			<TextField label="Name" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Randy" />
 			<TextField label="Symbol" value={symbol} onChange={(e)=>setSymbol(e.target.value)} placeholder="RANDY" />
-            <input type="file" accept="image/*" onChange={async (e)=>{
+			<input id="token-image" className="hidden" type="file" accept="image/*" onChange={async (e)=>{
 				const f = e.target.files?.[0];
 				if (!f) return;
 				const fd = new FormData();
@@ -141,6 +157,7 @@ export default function LaunchPage() {
 					setStatus('');
 				}
 			}} />
+			<label htmlFor="token-image" className="inline-block w-fit cursor-pointer px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Select Picture</label>
 			{image && (
 				<div className="mt-2 border border-white/60 rounded p-2">
                     <NextImage src={image.replace('ipfs://', 'https://ipfs.io/ipfs/')} alt="preview" width={512} height={256} className="w-auto h-48 object-contain" />
@@ -166,12 +183,12 @@ export default function LaunchPage() {
 				)}
 			</div>
 			<div className="grid grid-cols-3 gap-3">
-				<TextField label="Vault %" value={vaultPct} onChange={(e)=>setVaultPct(e.target.value)} />
-				<TextField label="Lockup (sec)" value={lockup} onChange={(e)=>setLockup(e.target.value)} />
-				<TextField label="Vesting (sec)" value={vesting} onChange={(e)=>setVesting(e.target.value)} />
+				<TextField label="Vault % (max 90)" type="number" value={vaultPct} onChange={(e)=>setVaultPct(e.target.value)} />
+				<TextField label="Lockup (days, min 7)" type="number" value={lockupDays} onChange={(e)=>setLockupDays(e.target.value)} />
+				<TextField label="Vesting (days)" type="number" value={vestingDays} onChange={(e)=>setVestingDays(e.target.value)} />
 			</div>
 			<TextField label="Dev Buy (ETH)" value={devBuyEth} onChange={(e)=>setDevBuyEth(e.target.value)} placeholder="0" />
-			<Button onClick={deploy} variant="contained" disabled={activeChain.id !== base.id}>Deploy</Button>
+			<Button onClick={deploy} variant="contained" disabled={activeChain.id !== base.id} className="w-fit px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-black bg-yellow-300 hover:bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Deploy</Button>
 			{status && <div className="text-sm">{status}</div>}
 			{txHash && <a className="text-blue-600 text-sm" target="_blank" href={`${explorerBase}/tx/${txHash}`}>View tx</a>}
 			{deployed && <div className="text-sm">Token: {deployed} &nbsp; <a className="text-blue-600" target="_blank" href={`https://clanker.world/clanker/${deployed}`}>View on Clanker</a></div>}
