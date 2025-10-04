@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server'
 import staking from '@/lib/MiningStaking.json'
 import type { Abi } from 'viem'
 import { base } from 'viem/chains'
-import { createPublicClient, createWalletClient, http, privateKeyToAccount, parseUnits, Hex, Address } from 'viem'
+import { createPublicClient, createWalletClient, http, parseUnits, Hex, Address } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
 
 type Json = Record<string, unknown>
 
