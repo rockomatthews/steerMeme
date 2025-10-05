@@ -7,7 +7,7 @@ import { privateKeyToAccount } from 'viem/accounts'
 
 type Json = Record<string, unknown>
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
     const minerAddress = process.env.NEXT_PUBLIC_MINER_ADDRESS as Address | undefined
     const rpcUrl = process.env.NEXT_PUBLIC_BASE_RPC_URL || process.env.BASE_RPC_URL

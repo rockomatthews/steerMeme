@@ -1,6 +1,4 @@
-import { NextRequest } from 'next/server'
-
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
     const chainId = 8453 // Base mainnet
     // Query Clanker Public API for tokens launched via our interface context

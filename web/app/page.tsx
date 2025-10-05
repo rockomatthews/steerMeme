@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 export default function Home() {
 	return (
@@ -46,9 +47,9 @@ function pct(n?: number) {
 }
 
 function TokensWall() {
-    const [tokens, setTokens] = (require('react') as any).useState<any[]>([])
-    const [loading, setLoading] = (require('react') as any).useState(true)
-    ;(require('react') as any).useEffect(() => { (async()=>{ setLoading(true); setTokens(await fetchTokens()); setLoading(false) })() }, [])
+    const [tokens, setTokens] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    useEffect(() => { (async()=>{ setLoading(true); setTokens(await fetchTokens()); setLoading(false) })() }, [])
     return (
         <div className="w-full max-w-5xl mt-8">
             <h2 className="text-yellow-300 font-bold mb-3">Launched Tokens</h2>
