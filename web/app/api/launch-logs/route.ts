@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     console.warn('[launch-log]', JSON.stringify(body))
     return Response.json({ ok: true })
-  } catch (_e) {
+  } catch {
     return Response.json({ ok: false }, { status: 400 })
   }
 }

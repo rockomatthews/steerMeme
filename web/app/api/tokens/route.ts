@@ -7,7 +7,7 @@ export async function GET() {
     if (!r.ok) throw new Error(`clanker api ${r.status}`)
     const data = await r.json()
     return Response.json({ ok: true, tokens: data?.tokens || data || [] })
-  } catch (e) {
+  } catch {
     return Response.json({ ok: false, tokens: [] })
   }
 }

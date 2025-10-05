@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+// no request args needed
 import staking from '@/lib/MiningStaking.json'
 import type { Abi } from 'viem'
 import { base } from 'viem/chains'

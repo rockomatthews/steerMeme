@@ -29,11 +29,13 @@ export default function Home() {
 	)
 }
 
-async function fetchTokens() {
+type TokenItem = { address?: string; tokenAddress?: string; name?: string; symbol?: string; token?: { name?: string; symbol?: string }; marketCapUsd?: number; stats?: { marketCapUsd?: number; change24hPct?: number }; change24hPct?: number }
+
+async function fetchTokens(): Promise<TokenItem[]> {
     const r = await fetch('/api/tokens', { cache: 'no-store' })
-    if (!r.ok) return [] as any[]
+    if (!r.ok) return []
     const j = await r.json()
-    return j.tokens ?? []
+    return (j.tokens ?? []) as TokenItem[]
 }
 
 function formatUSD(n?: number) {
@@ -48,7 +50,7 @@ function pct(n?: number) {
 }
 
 function TokensWall() {
-    const [tokens, setTokens] = useState<any[]>([])
+    const [tokens, setTokens] = useState<TokenItem[]>([])
     const [loading, setLoading] = useState(true)
     useEffect(() => { (async()=>{ setLoading(true); setTokens(await fetchTokens()); setLoading(false) })() }, [])
     return (
