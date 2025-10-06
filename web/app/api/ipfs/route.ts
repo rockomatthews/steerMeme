@@ -12,15 +12,17 @@ export async function POST(req: NextRequest) {
 		if (!token) return new Response('missing server token', { status: 500 })
 		// Forward raw bytes (octet-stream) to nft.storage HTTP API
 		const blob = file as unknown as Blob
+		const ab = await (blob as Blob).arrayBuffer()
+		const buf = Buffer.from(ab)
 		const upstream = await fetch('https://api.nft.storage/upload', {
 			method: 'POST',
-			headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/octet-stream' },
-			body: blob
+			headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/octet-stream', 'Content-Length': String(buf.length) },
+			body: buf
 		})
 		const ct = upstream.headers.get('content-type') || ''
 		const body = ct.includes('application/json') ? await upstream.json() : { ok: false, error: await upstream.text() }
 		if (!upstream.ok || body?.ok === false) {
-			const msg = (body?.error && (body.error.message || body.error)) || 'upload failed'
+			const msg = (body?.error && (body.error.message || body.error)) || `nft.storage ${upstream.status}`
 			return new Response(String(msg), { status: 500 })
 		}
 		const cid = body?.value?.cid || body?.cid
