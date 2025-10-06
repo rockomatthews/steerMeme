@@ -40,6 +40,8 @@ export default function LaunchPage() {
 	const [description, setDescription] = useState("");
 	const [twitter, setTwitter] = useState("");
 	const [website, setWebsite] = useState("");
+	const [telegram, setTelegram] = useState("");
+	const [farcaster, setFarcaster] = useState("");
 	const [feeType, setFeeType] = useState<"static"|"default">("default");
 	const [clankerFeeBps, setClankerFeeBps] = useState("100");
 	const [pairedFeeBps, setPairedFeeBps] = useState("100");
@@ -87,9 +89,11 @@ export default function LaunchPage() {
             const walletForSdk = createWalletClient({ account, chain: activeChain, transport: custom(provider) });
             const clanker = new Clanker({ publicClient, wallet: walletForSdk });
             type DeployArg = Parameters<typeof clanker.deploy>[0];
-            const socials: { platform: string; url: string }[] = [];
+			const socials: { platform: string; url: string }[] = [];
             if (twitter) socials.push({ platform: 'twitter', url: twitter });
             if (website) socials.push({ platform: 'website', url: website });
+			if (telegram) socials.push({ platform: 'telegram', url: telegram });
+			if (farcaster) socials.push({ platform: 'farcaster', url: farcaster });
 			let tokenConfig: DeployArg = {
                 name,
                 symbol,
@@ -126,6 +130,13 @@ export default function LaunchPage() {
 			if (waitErr) throw waitErr;
 			setDeployed(tokenAddr);
 			setStatus("Deployed");
+			// persist to local list for homepage wall
+			try {
+				const key = 'launchedTokens'
+				const prev = JSON.parse(localStorage.getItem(key) || '[]')
+				const next = [{ address: tokenAddr, name, symbol, image }, ...prev.filter((x: any)=>x.address!==tokenAddr)].slice(0,100)
+				localStorage.setItem(key, JSON.stringify(next))
+			} catch {}
             } catch (e: unknown) {
 			setError(e instanceof Error ? e.message : 'Deployment failed');
 			setStatus("");
@@ -178,6 +189,8 @@ export default function LaunchPage() {
 			<TextField label="Description" multiline minRows={3} value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="What is your token?" />
 			<TextField label="Twitter URL" value={twitter} onChange={(e)=>setTwitter(e.target.value)} placeholder="https://x.com/handle" />
 			<TextField label="Website URL" value={website} onChange={(e)=>setWebsite(e.target.value)} placeholder="https://yoursite" />
+			<TextField label="Telegram URL" value={telegram} onChange={(e)=>setTelegram(e.target.value)} placeholder="https://t.me/yourchannel" />
+			<TextField label="Farcaster URL" value={farcaster} onChange={(e)=>setFarcaster(e.target.value)} placeholder="https://warpcast.com/username" />
 			<FormControlLabel control={<Checkbox checked={vanity} onChange={(e)=>setVanity(e.target.checked)} />} label="Vanity suffix" />
 			<div className="grid grid-cols-2 gap-3">
 				<div>

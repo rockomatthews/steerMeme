@@ -52,7 +52,21 @@ function pct(n?: number) {
 function TokensWall() {
     const [tokens, setTokens] = useState<TokenItem[]>([])
     const [loading, setLoading] = useState(true)
-    useEffect(() => { (async()=>{ setLoading(true); setTokens(await fetchTokens()); setLoading(false) })() }, [])
+    useEffect(() => {
+        (async()=>{
+            setLoading(true)
+            // merge server tokens with local launches so they show instantly
+            const remote = await fetchTokens()
+            const local = JSON.parse(localStorage.getItem('launchedTokens') || '[]') as TokenItem[]
+            const mergedMap = new Map<string, TokenItem>()
+            ;[...local, ...remote].forEach(t => {
+                const addr = (t.address || t.tokenAddress || '').toLowerCase()
+                if (addr) mergedMap.set(addr, t)
+            })
+            setTokens(Array.from(mergedMap.values()))
+            setLoading(false)
+        })()
+    }, [])
     return (
         <div className="w-full max-w-5xl mt-8">
             <h2 className="text-yellow-300 font-bold mb-3">Launched Tokens</h2>
