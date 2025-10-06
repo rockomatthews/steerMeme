@@ -156,8 +156,12 @@ export default function LaunchPage() {
 				setError('');
 				try {
 					const res = await fetch('/api/ipfs', { method: 'POST', body: fd });
-					const json = await res.json();
-					if (!res.ok) throw new Error(json?.message || 'Upload failed');
+					const ct = res.headers.get('content-type') || ''
+					if (!res.ok) {
+						const errText = ct.includes('application/json') ? JSON.stringify(await res.json()) : await res.text()
+						throw new Error(errText || 'Upload failed')
+					}
+					const json = ct.includes('application/json') ? await res.json() : { uri: '' }
 					setImage(json.uri);
 					setStatus('Image uploaded');
 				} catch (err: unknown) {
