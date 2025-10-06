@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+export const runtime = 'nodejs'
 // Using HTTP API to avoid client-side key format constraints
 
 export async function POST(req: NextRequest) {
@@ -9,16 +10,12 @@ export async function POST(req: NextRequest) {
 		let token = (process.env.NFT_STORAGE_TOKEN || process.env.WEB3_STORAGE_TOKEN || '').trim()
 		if (token.toLowerCase().startsWith('bearer ')) token = token.slice(7)
 		if (!token) return new Response('missing server token', { status: 500 })
-		// Forward the same file to nft.storage HTTP API
-		const fd = new FormData()
-		// preserve filename if present
+		// Forward raw bytes (octet-stream) to nft.storage HTTP API
 		const blob = file as unknown as Blob
-		const name = (file as unknown as File).name || 'upload.bin'
-		fd.append('file', blob, name)
 		const upstream = await fetch('https://api.nft.storage/upload', {
 			method: 'POST',
-			headers: { Authorization: `Bearer ${token}` },
-			body: fd
+			headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/octet-stream' },
+			body: blob
 		})
 		const ct = upstream.headers.get('content-type') || ''
 		const body = ct.includes('application/json') ? await upstream.json() : { ok: false, error: await upstream.text() }
