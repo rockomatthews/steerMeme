@@ -45,13 +45,13 @@ export default function MinerPage() {
 		functionName: 'tiers'
 	}) as { data: readonly [bigint[], bigint[]] | undefined }
 
-	const { data: rewardRate } = useReadContract({
+const { data: _rewardRate } = useReadContract({
 		address: MINER_ADDRESS,
 		abi: MINER_ABI,
 		functionName: 'rewardRatePerSecond'
 	}) as { data: bigint | undefined }
 
-	const { data: totalWeighted } = useReadContract({
+const { data: _totalWeighted } = useReadContract({
 		address: MINER_ADDRESS,
 		abi: MINER_ABI,
 		functionName: 'totalWeightedStake'

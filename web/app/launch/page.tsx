@@ -133,8 +133,9 @@ export default function LaunchPage() {
 			// persist to local list for homepage wall
 			try {
 				const key = 'launchedTokens'
-				const prev = JSON.parse(localStorage.getItem(key) || '[]')
-				const next = [{ address: tokenAddr, name, symbol, image }, ...prev.filter((x: any)=>x.address!==tokenAddr)].slice(0,100)
+				type LocalToken = { address: string; name: string; symbol: string; image?: string }
+				const prev = JSON.parse(localStorage.getItem(key) || '[]') as LocalToken[]
+				const next: LocalToken[] = [{ address: tokenAddr, name, symbol, image }, ...prev.filter((x)=>x.address!==tokenAddr)].slice(0,100)
 				localStorage.setItem(key, JSON.stringify(next))
 			} catch {}
             } catch (e: unknown) {
