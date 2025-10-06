@@ -6,9 +6,10 @@ export async function POST(req: NextRequest) {
 		const form = await req.formData()
 		const file = form.get('file') as unknown as File | null
 		if (!file) return new Response('no file', { status: 400 })
-    const token = process.env.WEB3_STORAGE_TOKEN
-    if (!token) return new Response('missing server token', { status: 500 })
-    const client = new NFTStorage({ token })
+		let token = (process.env.NFT_STORAGE_TOKEN || process.env.WEB3_STORAGE_TOKEN || '').trim()
+		if (token.toLowerCase().startsWith('bearer ')) token = token.slice(7)
+		if (!token) return new Response('missing server token', { status: 500 })
+		const client = new NFTStorage({ token })
     const cid = await client.storeBlob(file as unknown as Blob)
     return Response.json({ cid, uri: `ipfs://${cid}` })
 	} catch (e: unknown) {
