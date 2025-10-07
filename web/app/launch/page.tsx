@@ -12,7 +12,6 @@ import Tooltip from '@mui/material/Tooltip';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
-import NextImage from 'next/image';
 import { useAccount, usePublicClient, useWalletClient, useChainId, useSwitchChain } from "wagmi";
 import type { PublicClient, Account, EIP1193Provider } from "viem";
 import { createWalletClient, custom } from "viem";
@@ -182,24 +181,26 @@ export default function LaunchPage() {
 			<input id="token-image" className="hidden" type="file" accept="image/*" onChange={async (e)=>{
 				const f = e.target.files?.[0];
 				if (!f) return;
-				// Resize/compress on client to improve reliability (< ~1MB)
-				async function downscaleToLimit(file: File, maxDim = 1024, targetBytes = 950_000): Promise<{ blob: Blob; name: string }> {
+				// Resize/crop to centered square and compress on client (< ~1MB)
+				async function downscaleToLimit(file: File, targetDim = 1024, targetBytes = 950_000): Promise<{ blob: Blob; name: string }> {
 					const img = document.createElement('img')
 					const objectUrl = URL.createObjectURL(file)
 					await new Promise<void>((resolve, reject) => { img.onload = () => resolve(); img.onerror = () => reject(new Error('image load failed')); img.src = objectUrl })
 					const canvas = document.createElement('canvas')
-					let { width, height } = img
-					const scale = Math.min(1, maxDim / Math.max(width, height))
-					width = Math.max(1, Math.floor(width * scale))
-					height = Math.max(1, Math.floor(height * scale))
-					canvas.width = width
-					canvas.height = height
 					const ctx = canvas.getContext('2d')
 					if (!ctx) throw new Error('canvas context failed')
-					ctx.drawImage(img, 0, 0, width, height)
+					// Determine centered square crop from source
+					const srcSize = Math.min(img.width, img.height)
+					const sx = Math.floor((img.width - srcSize) / 2)
+					const sy = Math.floor((img.height - srcSize) / 2)
+					// Output square canvas
+					const outDim = Math.min(targetDim, srcSize)
+					canvas.width = outDim
+					canvas.height = outDim
+					ctx.imageSmoothingQuality = 'high'
+					ctx.drawImage(img, sx, sy, srcSize, srcSize, 0, 0, outDim, outDim)
 					let quality = 0.9
 					let out: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality))
-					// Iteratively reduce quality if needed
 					while (out && out.size > targetBytes && quality > 0.4) {
 						quality -= 0.1
 						out = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality))
@@ -238,7 +239,7 @@ export default function LaunchPage() {
 					<IconButton size="small" onClick={()=>{ setImage(''); if (imagePreviewUrl) { URL.revokeObjectURL(imagePreviewUrl); } setImagePreviewUrl(''); }} className="!absolute !top-1 !right-1 !text-white/80">
 						<CloseIcon fontSize="small" />
 					</IconButton>
-					<NextImage src={(image || '').startsWith('ipfs://') ? image.replace('ipfs://', 'https://ipfs.io/ipfs/') : (image || imagePreviewUrl)} alt="preview" width={512} height={256} className="w-auto h-48 object-contain" />
+					<img src={(image || '').startsWith('ipfs://') ? image.replace('ipfs://', 'https://ipfs.io/ipfs/') : (image || imagePreviewUrl)} alt="preview" className="w-48 h-48 object-cover" />
 				</div>
 			)}
 			<TextField label="Description" multiline minRows={3} value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="What is your token?" />
