@@ -29,7 +29,18 @@ export default function Home() {
 	)
 }
 
-type TokenItem = { address?: string; tokenAddress?: string; name?: string; symbol?: string; token?: { name?: string; symbol?: string }; marketCapUsd?: number; stats?: { marketCapUsd?: number; change24hPct?: number }; change24hPct?: number }
+type TokenItem = {
+    address?: string
+    tokenAddress?: string
+    name?: string
+    symbol?: string
+    image?: string
+    logoURI?: string
+    token?: { name?: string; symbol?: string; image?: string; logoURI?: string }
+    marketCapUsd?: number
+    stats?: { marketCapUsd?: number; change24hPct?: number }
+    change24hPct?: number
+}
 
 async function fetchTokens(): Promise<TokenItem[]> {
     const r = await fetch('/api/tokens', { cache: 'no-store' })
@@ -72,13 +83,21 @@ function TokensWall() {
             <h2 className="text-yellow-300 font-bold mb-3">Launched Tokens</h2>
             {loading && <div className="opacity-70">Loading…</div>}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {tokens.map((t, i) => (
-                    <a key={i} href={`https://clanker.world/clanker/${t.address || t.tokenAddress}`} target="_blank" className="block p-4 border-2 border-yellow-400 rounded bg-yellow-400/5 hover:bg-yellow-400/10">
-                        <div className="font-bold text-yellow-300 mb-1">{t.name || t.token?.name} <span className="opacity-70">{t.symbol || t.token?.symbol}</span></div>
-                        <div className="text-sm">MCap: {formatUSD(t.marketCapUsd || t.stats?.marketCapUsd)}</div>
-                        <div className={`text-sm ${((t.change24hPct || t.stats?.change24hPct) ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>24h: {pct(t.change24hPct || t.stats?.change24hPct)}</div>
-                    </a>
-                ))}
+                {tokens.map((t, i) => {
+                    const addr = t.address || t.tokenAddress || ''
+                    const img = t.image || t.token?.image || t.logoURI || t.token?.logoURI || ''
+                    const url = img.startsWith('ipfs://') ? img.replace('ipfs://', 'https://ipfs.io/ipfs/') : img
+                    return (
+                        <a key={i} href={`https://clanker.world/clanker/${addr}`} target="_blank" className="block p-4 border-2 border-yellow-400 rounded bg-yellow-400/5 hover:bg-yellow-400/10">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Image src={url || '/steermeme-logo.svg'} alt={t.name || t.token?.name || 'token'} width={40} height={40} className="rounded" />
+                                <div className="font-bold text-yellow-300">{t.name || t.token?.name} <span className="opacity-70">{t.symbol || t.token?.symbol}</span></div>
+                            </div>
+                            <div className="text-sm">MCap: {formatUSD(t.marketCapUsd || t.stats?.marketCapUsd)}</div>
+                            <div className={`text-sm ${((t.change24hPct || t.stats?.change24hPct) ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>24h: {pct(t.change24hPct || t.stats?.change24hPct)}</div>
+                        </a>
+                    )
+                })}
             </div>
         </div>
     )

@@ -8,6 +8,8 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import NextImage from 'next/image';
 import { useAccount, usePublicClient, useWalletClient, useChainId, useSwitchChain } from "wagmi";
 import type { PublicClient, Account, EIP1193Provider } from "viem";
@@ -208,13 +210,58 @@ export default function LaunchPage() {
 					</>
 				)}
 			</div>
-			<div className="grid grid-cols-3 gap-3">
-				<TextField label="Vault % (max 90)" type="number" value={vaultPct} onChange={(e)=>setVaultPct(e.target.value)} />
-				<TextField label="Lockup (days, min 7)" type="number" value={lockupDays} onChange={(e)=>setLockupDays(e.target.value)} />
-				<TextField label="Vesting (days)" type="number" value={vestingDays} onChange={(e)=>setVestingDays(e.target.value)} />
+			<div className="flex flex-col gap-4">
+				<div>
+					<div className="flex items-center gap-2 mb-1">
+						<Typography variant="body2" fontWeight={600}>Vault % (max 90)</Typography>
+						<Tooltip title="Percentage of total token supply reserved to a vault at launch. Vaulted tokens are removed from circulating supply initially and unlock later based on your lockup and vesting settings. Typical range is 5–20%.">
+							<InfoOutlined fontSize="small" className="opacity-70" />
+						</Tooltip>
+					</div>
+					<TextField type="number" value={vaultPct} onChange={(e)=>setVaultPct(e.target.value)} placeholder="e.g. 10" />
+				</div>
+				<div>
+					<div className="flex items-center gap-2 mb-1">
+						<Typography variant="body2" fontWeight={600}>Lockup (days, min 7)</Typography>
+						<Tooltip title="Cliff period where the vault cannot be withdrawn at all. Minimum 7 days per Clanker v4. After the lockup ends, either all tokens unlock immediately (if vesting is 0) or they begin unlocking linearly over the vesting period.">
+							<InfoOutlined fontSize="small" className="opacity-70" />
+						</Tooltip>
+					</div>
+					<TextField type="number" value={lockupDays} onChange={(e)=>setLockupDays(e.target.value)} placeholder="e.g. 30" />
+				</div>
+				<div>
+					<div className="flex items-center gap-2 mb-1">
+						<Typography variant="body2" fontWeight={600}>Vesting (days)</Typography>
+						<Tooltip title="Linear release duration after lockup. 0 means the entire vault unlocks at the end of the lockup (a cliff). For non‑zero vesting, tokens release smoothly from the day lockup ends until vesting completes.">
+							<InfoOutlined fontSize="small" className="opacity-70" />
+						</Tooltip>
+					</div>
+					<TextField type="number" value={vestingDays} onChange={(e)=>setVestingDays(e.target.value)} placeholder="e.g. 90" />
+				</div>
 			</div>
 			<TextField label="Dev Buy (ETH)" value={devBuyEth} onChange={(e)=>setDevBuyEth(e.target.value)} placeholder="0" />
 			<Button onClick={deploy} variant="contained" disabled={activeChain.id !== base.id} className="w-fit px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-black bg-yellow-300 hover:bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Deploy</Button>
+
+			{/* Educational: Vault, Lockup, Vesting strategies */}
+			<div className="mt-6 space-y-3 text-yellow-200">
+				<Typography variant="subtitle1" fontWeight={700}>How Vault, Lockup and Vesting work together</Typography>
+				<Typography variant="body2">
+					Vault % sets how much of total supply is reserved for long‑term needs (team, growth, ops). Lockup prevents any withdrawal of the vault until it ends (a cliff). Vesting then determines whether the vault unlocks instantly (0 days) or linearly over time.
+				</Typography>
+				<Typography variant="subtitle2" fontWeight={700}>Examples</Typography>
+				<ul className="list-disc pl-5 space-y-1">
+					<li><b>No vault:</b> 0% vault, 0 lockup, 0 vesting → 100% circulating at launch.</li>
+					<li><b>Cliff only:</b> 10% vault, 30‑day lockup, 0 vesting → that 10% unlocks all at day 31.</li>
+					<li><b>Smoother release:</b> 10% vault, 7‑day lockup, 90‑day vesting → unlocks linearly from day 8 to day 97.</li>
+					<li><b>Long‑term:</b> 20% vault, 60‑day lockup, 180‑day vesting → strong supply discipline and alignment.</li>
+				</ul>
+				<Typography variant="subtitle2" fontWeight={700}>Strategy tips</Typography>
+				<ul className="list-disc pl-5 space-y-1">
+					<li>Keep vault ≤ 20% to avoid supply concerns; communicate purpose clearly.</li>
+					<li>Use ≥ 7‑30 days lockup to signal commitment and avoid immediate sell pressure.</li>
+					<li>Prefer non‑zero vesting for smoother unlocks unless you intentionally want a cliff event.</li>
+				</ul>
+			</div>
 			{status && <div className="text-sm">{status}</div>}
 			{txHash && <a className="text-blue-600 text-sm" target="_blank" href={`${explorerBase}/tx/${txHash}`}>View tx</a>}
 			{deployed && <div className="text-sm">Token: {deployed} &nbsp; <a className="text-blue-600" target="_blank" href={`https://clanker.world/clanker/${deployed}`}>View on Clanker</a></div>}
