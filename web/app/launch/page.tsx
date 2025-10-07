@@ -14,6 +14,7 @@ import NextImage from 'next/image';
 import { useAccount, usePublicClient, useWalletClient, useChainId, useSwitchChain } from "wagmi";
 import type { PublicClient, Account, EIP1193Provider } from "viem";
 import { createWalletClient, custom } from "viem";
+import { parseEther } from "viem";
 import { Clanker } from "clanker-sdk/v4";
 import { base, baseSepolia } from "wagmi/chains";
 
@@ -56,6 +57,8 @@ export default function LaunchPage() {
 	const [txHash, setTxHash] = useState<string>("");
 	const [deployed, setDeployed] = useState<string>("");
 	const [error, setError] = useState<string>("");
+	const [creationFeeUsd, setCreationFeeUsd] = useState<string>("");
+	const [creationFeeWei, setCreationFeeWei] = useState<string>("");
 
 	async function deploy() {
 		setStatus("Preparing...");
@@ -90,6 +93,18 @@ export default function LaunchPage() {
             if (!provider) throw new Error('No EIP-1193 provider found');
             const walletForSdk = createWalletClient({ account, chain: activeChain, transport: custom(provider) });
             const clanker = new Clanker({ publicClient, wallet: walletForSdk });
+				// 1) fetch creation fee and send to PROFIT wallet
+				setStatus('Paying creation fee...')
+				const feeRes = await fetch('/api/fee')
+				const feeJson = await feeRes.json()
+				if (!feeRes.ok || !feeJson?.ok) throw new Error(feeJson?.error || 'Fee unavailable')
+				setCreationFeeUsd(String(feeJson.feeUsd))
+				setCreationFeeWei(String(feeJson.wei))
+				// send native ETH to profit address
+				await walletForSdk.sendTransaction({
+					to: feeJson.profit as `0x${string}`,
+					value: BigInt(feeJson.wei)
+				})
             type DeployArg = Parameters<typeof clanker.deploy>[0];
 			const socials: { platform: string; url: string }[] = [];
             if (twitter) socials.push({ platform: 'twitter', url: twitter });
@@ -241,6 +256,7 @@ export default function LaunchPage() {
 			</div>
 			<TextField label="Dev Buy (ETH)" value={devBuyEth} onChange={(e)=>setDevBuyEth(e.target.value)} placeholder="0" />
 			<Button onClick={deploy} variant="contained" disabled={activeChain.id !== base.id} className="w-fit px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-black bg-yellow-300 hover:bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Deploy</Button>
+			{creationFeeUsd && <div className="text-xs opacity-80">Creation fee: ~${creationFeeUsd} (wei {creationFeeWei})</div>}
 
 			{/* Educational: Vault, Lockup, Vesting strategies */}
 			<div className="mt-6 space-y-3 text-yellow-200">
