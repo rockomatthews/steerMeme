@@ -42,6 +42,30 @@ type TokenItem = {
     change24hPct?: number
 }
 
+function IPFSImage({ src, alt, width, height, className }: { src: string; alt: string; width: number; height: number; className?: string }) {
+    const gateways = ['gateway.pinata.cloud', 'ipfs.io', 'cloudflare-ipfs.com', 'nftstorage.link']
+    const [idx, setIdx] = useState(0)
+    const s = (() => {
+        if (!src) return ''
+        if (src.startsWith('ipfs://')) {
+            const cid = src.replace('ipfs://', '')
+            return `https://${gateways[idx]}/ipfs/${cid}`
+        }
+        return src
+    })()
+    return (
+        <Image
+            src={s || '/steermeme-logo.svg'}
+            alt={alt}
+            width={width}
+            height={height}
+            className={className}
+            unoptimized
+            onError={() => setIdx((i) => (i + 1) % gateways.length)}
+        />
+    )
+}
+
 async function fetchTokens(): Promise<TokenItem[]> {
     const r = await fetch('/api/tokens', { cache: 'no-store' })
     if (!r.ok) return []
@@ -86,11 +110,10 @@ function TokensWall() {
                 {tokens.map((t, i) => {
                     const addr = t.address || t.tokenAddress || ''
                     const img = t.image || t.token?.image || t.logoURI || t.token?.logoURI || ''
-                    const url = img.startsWith('ipfs://') ? img.replace('ipfs://', 'https://ipfs.io/ipfs/') : img
                     return (
                         <a key={i} href={`https://clanker.world/clanker/${addr}`} target="_blank" className="block p-4 border-2 border-yellow-400 rounded bg-yellow-400/5 hover:bg-yellow-400/10">
                             <div className="flex items-center gap-3 mb-2">
-                                <Image src={url || '/steermeme-logo.svg'} alt={t.name || t.token?.name || 'token'} width={40} height={40} className="rounded" />
+                                <IPFSImage src={img} alt={t.name || t.token?.name || 'token'} width={40} height={40} className="rounded" />
                                 <div className="font-bold text-yellow-300">{t.name || t.token?.name} <span className="opacity-70">{t.symbol || t.token?.symbol}</span></div>
                             </div>
                             <div className="text-sm">MCap: {formatUSD(t.marketCapUsd || t.stats?.marketCapUsd)}</div>
