@@ -109,7 +109,7 @@ export default function LaunchPage() {
 				})
             type DeployArg = Parameters<typeof clanker.deploy>[0];
 			const socials: { platform: string; url: string }[] = [];
-            if (twitter) socials.push({ platform: 'twitter', url: twitter });
+            if (twitter) socials.push({ platform: 'x', url: twitter });
             if (website) socials.push({ platform: 'website', url: website });
 			if (telegram) socials.push({ platform: 'telegram', url: telegram });
 			if (farcaster) socials.push({ platform: 'farcaster', url: farcaster });
