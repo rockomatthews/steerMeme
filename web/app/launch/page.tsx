@@ -212,6 +212,8 @@ export default function LaunchPage() {
 				}
 
 				const { blob, name } = await downscaleToLimit(f)
+				// Set local preview immediately so user always sees something
+				try { setImagePreviewUrl(URL.createObjectURL(blob)) } catch {}
 				const fd = new FormData();
 				fd.append('file', blob, name);
 				setStatus('Uploading image...');
@@ -225,8 +227,6 @@ export default function LaunchPage() {
 					}
 					const json = ct.includes('application/json') ? await res.json() : { uri: '' }
 					setImage(json.uri);
-					// Local preview via object URL for immediate feedback
-					setImagePreviewUrl(URL.createObjectURL(blob))
 					setStatus('Image uploaded');
 				} catch (err: unknown) {
 					setError(err instanceof Error ? err.message : 'Upload failed');
@@ -239,7 +239,14 @@ export default function LaunchPage() {
 					<IconButton size="small" onClick={()=>{ setImage(''); if (imagePreviewUrl) { URL.revokeObjectURL(imagePreviewUrl); } setImagePreviewUrl(''); }} className="!absolute !top-1 !right-1 !text-white/80">
 						<CloseIcon fontSize="small" />
 					</IconButton>
-					<img src={(image || '').startsWith('ipfs://') ? image.replace('ipfs://', 'https://ipfs.io/ipfs/') : (image || imagePreviewUrl)} alt="preview" className="w-48 h-48 object-cover" />
+					{(() => {
+						const ipfsUrl = (image || '').startsWith('ipfs://') ? image.replace('ipfs://', 'https://ipfs.io/ipfs/') : image
+						const src = imagePreviewUrl || ipfsUrl || ''
+						return <img src={src} alt="preview" className="w-48 h-48 object-cover" onError={(e)=>{
+							// Fallback: if ipfs url fails and we have preview, use it
+							if (imagePreviewUrl && (e.currentTarget.src !== imagePreviewUrl)) e.currentTarget.src = imagePreviewUrl
+						}} />
+					})()}
 				</div>
 			)}
 			<TextField label="Description" multiline minRows={3} value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="What is your token?" />
