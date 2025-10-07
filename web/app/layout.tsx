@@ -15,7 +15,7 @@ export const metadata: Metadata = {
         url: 'https://www.randymining.com',
         siteName: 'randymining.com',
         images: [
-            { url: 'https://www.randymining.com/imessagepreview.png', width: 1200, height: 630, alt: 'Randy Mining' }
+            { url: 'https://www.randymining.com/imessagepreview.jpg?v=2', width: 1200, height: 630, alt: 'Randy Mining' }
         ],
         type: 'website'
     },
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
         card: 'summary_large_image',
         title: 'randymining.com - More Randy, Faster Mining',
         description: 'The more you stake, the faster you mine.',
-        images: ['https://www.randymining.com/imessagepreview.png']
+        images: ['https://www.randymining.com/imessagepreview.jpg?v=2']
     }
 }
 
