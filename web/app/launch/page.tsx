@@ -10,6 +10,8 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import Tooltip from '@mui/material/Tooltip';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 import NextImage from 'next/image';
 import { useAccount, usePublicClient, useWalletClient, useChainId, useSwitchChain } from "wagmi";
 import type { PublicClient, Account, EIP1193Provider } from "viem";
@@ -40,6 +42,7 @@ export default function LaunchPage() {
 	const [symbol, setSymbol] = useState("");
 	const [vanity, setVanity] = useState(true);
 	const [image, setImage] = useState("");
+	const [imagePreviewUrl, setImagePreviewUrl] = useState<string>("");
 	const [description, setDescription] = useState("");
 	const [twitter, setTwitter] = useState("");
 	const [website, setWebsite] = useState("");
@@ -179,8 +182,37 @@ export default function LaunchPage() {
 			<input id="token-image" className="hidden" type="file" accept="image/*" onChange={async (e)=>{
 				const f = e.target.files?.[0];
 				if (!f) return;
+				// Resize/compress on client to improve reliability (< ~1MB)
+				async function downscaleToLimit(file: File, maxDim = 1024, targetBytes = 950_000): Promise<{ blob: Blob; name: string }> {
+					const img = document.createElement('img')
+					const objectUrl = URL.createObjectURL(file)
+					await new Promise<void>((resolve, reject) => { img.onload = () => resolve(); img.onerror = () => reject(new Error('image load failed')); img.src = objectUrl })
+					const canvas = document.createElement('canvas')
+					let { width, height } = img
+					const scale = Math.min(1, maxDim / Math.max(width, height))
+					width = Math.max(1, Math.floor(width * scale))
+					height = Math.max(1, Math.floor(height * scale))
+					canvas.width = width
+					canvas.height = height
+					const ctx = canvas.getContext('2d')
+					if (!ctx) throw new Error('canvas context failed')
+					ctx.drawImage(img, 0, 0, width, height)
+					let quality = 0.9
+					let out: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality))
+					// Iteratively reduce quality if needed
+					while (out && out.size > targetBytes && quality > 0.4) {
+						quality -= 0.1
+						out = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality))
+					}
+					URL.revokeObjectURL(objectUrl)
+					if (!out) throw new Error('image encode failed')
+					const base = (file.name || 'upload').replace(/\.[^.]+$/, '')
+					return { blob: out, name: `${base}.jpg` }
+				}
+
+				const { blob, name } = await downscaleToLimit(f)
 				const fd = new FormData();
-				fd.append('file', f);
+				fd.append('file', blob, name);
 				setStatus('Uploading image...');
 				setError('');
 				try {
@@ -192,6 +224,8 @@ export default function LaunchPage() {
 					}
 					const json = ct.includes('application/json') ? await res.json() : { uri: '' }
 					setImage(json.uri);
+					// Local preview via object URL for immediate feedback
+					setImagePreviewUrl(URL.createObjectURL(blob))
 					setStatus('Image uploaded');
 				} catch (err: unknown) {
 					setError(err instanceof Error ? err.message : 'Upload failed');
@@ -199,9 +233,12 @@ export default function LaunchPage() {
 				}
 			}} />
 			<label htmlFor="token-image" className="inline-block w-fit cursor-pointer px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Select Picture</label>
-			{image && (
-				<div className="mt-2 border border-white/60 rounded p-2">
-                    <NextImage src={image.replace('ipfs://', 'https://ipfs.io/ipfs/')} alt="preview" width={512} height={256} className="w-auto h-48 object-contain" />
+			{(image || imagePreviewUrl) && (
+				<div className="mt-2 border border-white/60 rounded p-2 relative">
+					<IconButton size="small" onClick={()=>{ setImage(''); if (imagePreviewUrl) { URL.revokeObjectURL(imagePreviewUrl); } setImagePreviewUrl(''); }} className="!absolute !top-1 !right-1 !text-white/80">
+						<CloseIcon fontSize="small" />
+					</IconButton>
+					<NextImage src={(image || '').startsWith('ipfs://') ? image.replace('ipfs://', 'https://ipfs.io/ipfs/') : (image || imagePreviewUrl)} alt="preview" width={512} height={256} className="w-auto h-48 object-contain" />
 				</div>
 			)}
 			<TextField label="Description" multiline minRows={3} value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="What is your token?" />
