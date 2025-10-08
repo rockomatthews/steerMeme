@@ -168,12 +168,12 @@ export default function LaunchPage() {
 
 	return (
 		<main className="max-w-2xl mx-auto p-6 flex flex-col gap-4">
-			<Typography variant="h4" fontWeight={700}>Launch a Meme Token</Typography>
+			<Typography variant="h4" fontWeight={700} className="sp-title">Launch a Meme Token</Typography>
 			<Typography variant="body2" color="text.secondary">Deploy via Clanker SDK. Creator 98% / Site Treasury 2% of LP rewards.</Typography>
 			{activeChain.id !== base.id && (
 				<div className="p-3 border rounded text-sm bg-yellow-50">
 					You are on {activeChain.name}. Please switch to Base mainnet.
-					<button onClick={() => switchChain({ chainId: base.id })} disabled={isSwitching} className="ml-2 px-3 py-1 border rounded">{isSwitching ? 'Switching…' : 'Switch to Base'}</button>
+			<button onClick={() => switchChain({ chainId: base.id })} disabled={isSwitching} className="ml-2 px-3 py-1 border rounded sp-btn">{isSwitching ? 'Switching…' : 'Switch to Base'}</button>
 				</div>
 			)}
 			<TextField label="Name" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Randy" />
@@ -233,7 +233,7 @@ export default function LaunchPage() {
 					setStatus('');
 				}
 			}} />
-			<label htmlFor="token-image" className="inline-block w-fit cursor-pointer px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Select Picture</label>
+			<label htmlFor="token-image" className="inline-block w-fit cursor-pointer px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Select Picture</label>
 			{(image || imagePreviewUrl) && (
 				<div className="mt-2 border border-white/60 rounded p-2 relative">
 					<IconButton size="small" onClick={()=>{ setImage(''); if (imagePreviewUrl) { URL.revokeObjectURL(imagePreviewUrl); } setImagePreviewUrl(''); }} className="!absolute !top-1 !right-1 !text-white/80">
@@ -300,7 +300,7 @@ export default function LaunchPage() {
 				</div>
 			</div>
 			<TextField label="Dev Buy (ETH)" value={devBuyEth} onChange={(e)=>setDevBuyEth(e.target.value)} placeholder="0" />
-			<Button onClick={deploy} variant="contained" disabled={activeChain.id !== base.id} className="w-fit px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-black bg-yellow-300 hover:bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Deploy</Button>
+			<Button onClick={deploy} variant="contained" disabled={activeChain.id !== base.id} className="w-fit px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-black bg-yellow-300 hover:bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Deploy</Button>
 			{creationFeeUsd && <div className="text-xs opacity-80">Creation fee: ~${creationFeeUsd} (wei {creationFeeWei})</div>}
 
 			{/* Educational: Vault, Lockup, Vesting strategies */}

@@ -11,6 +11,16 @@ function main() {
   const tokenDecimals = Number(process.env.TOKEN_DECIMALS || 18);
   const logoUri = process.env.TOKEN_LOGO_URI || "";
   const chainId = Number(process.env.CHAIN_ID || 8453);
+  const description = process.env.TOKEN_DESCRIPTION || "";
+  const website = process.env.TOKEN_WEBSITE || "";
+  const x = process.env.TOKEN_X || "";
+  const twitter = process.env.TOKEN_TWITTER || ""; // prefer explicit twitter if provided
+  const instagram = process.env.TOKEN_INSTAGRAM || "";
+  const farcaster = process.env.TOKEN_FARCASTER || "";
+  const telegram = process.env.TOKEN_TELEGRAM || "";
+  const discord = process.env.TOKEN_DISCORD || "";
+  const github = process.env.TOKEN_GITHUB || "";
+  const medium = process.env.TOKEN_MEDIUM || "";
 
   if (!tokenAddress) {
     console.error("TOKEN_ADDRESS is required");
@@ -34,7 +44,22 @@ function main() {
       (String(t.symbol).toUpperCase() === String(tokenSymbol).toUpperCase() && t.chainId === chainId)
     ) {
       replaced = true;
-      return {
+      const extensions = {};
+      if (description) extensions.description = description;
+      if (website) {
+        extensions.website = website; // common key used by several UIs
+        extensions.url = website;     // alias used by some aggregators
+      }
+      const tw = twitter || x;
+      if (tw) extensions.twitter = tw;
+      if (x && !tw) extensions.x = x; // keep x if provided but no twitter
+      if (telegram) extensions.telegram = telegram;
+      if (discord) extensions.discord = discord;
+      if (github) extensions.github = github;
+      if (medium) extensions.medium = medium;
+      if (instagram) extensions.instagram = instagram;
+      if (farcaster) extensions.farcaster = farcaster;
+      const token = {
         chainId,
         address: tokenAddress,
         name: tokenName,
@@ -42,19 +67,42 @@ function main() {
         decimals: tokenDecimals,
         logoURI: logoUri
       };
+      if (Object.keys(extensions).length > 0) {
+        token.extensions = extensions;
+      }
+      return token;
     }
     return t;
   });
 
   if (!replaced) {
-    data.tokens.push({
+    const extensions = {};
+    if (description) extensions.description = description;
+    if (website) {
+      extensions.website = website;
+      extensions.url = website;
+    }
+    const tw = twitter || x;
+    if (tw) extensions.twitter = tw;
+    if (x && !tw) extensions.x = x;
+    if (telegram) extensions.telegram = telegram;
+    if (discord) extensions.discord = discord;
+    if (github) extensions.github = github;
+    if (medium) extensions.medium = medium;
+    if (instagram) extensions.instagram = instagram;
+    if (farcaster) extensions.farcaster = farcaster;
+    const token = {
       chainId,
       address: tokenAddress,
       name: tokenName,
       symbol: tokenSymbol,
       decimals: tokenDecimals,
       logoURI: logoUri
-    });
+    };
+    if (Object.keys(extensions).length > 0) {
+      token.extensions = extensions;
+    }
+    data.tokens.push(token);
   }
 
   fs.writeFileSync(TOKENLIST_PATH, JSON.stringify(data, null, 2) + "\n");

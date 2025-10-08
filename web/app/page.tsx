@@ -7,11 +7,11 @@ export default function Home() {
 	return (
 		<main className="min-h-dvh flex flex-col items-center justify-center gap-8 p-8">
 			<Image src="/randy.png" alt="Randy" width={128} height={128} priority />
-			<h1 className="text-3xl font-bold text-yellow-300">Randy Mining</h1>
+			<h1 className="text-3xl font-bold text-yellow-300 sp-title">Randy Mining</h1>
 			<p className="opacity-80 text-yellow-200">The more you stake, the faster you mine</p>
 			<div className="flex gap-4">
-				<Link href="/miner" className="px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Open Miner</Link>
-				<Link href="/launch" className="px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Launch your own token!</Link>
+				<Link href="/miner" className="px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Open Miner</Link>
+				<Link href="/launch" className="px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Launch your own token!</Link>
 			</div>
 
 			<TokensWall />
@@ -87,6 +87,7 @@ function pct(n?: number) {
 function TokensWall() {
     const [tokens, setTokens] = useState<TokenItem[]>([])
     const [loading, setLoading] = useState(true)
+    const [tick, setTick] = useState(0)
     useEffect(() => {
         (async()=>{
             setLoading(true)
@@ -101,6 +102,12 @@ function TokensWall() {
             setTokens(Array.from(mergedMap.values()))
             setLoading(false)
         })()
+    }, [tick])
+
+    // poll every 30s for fresh stats
+    useEffect(() => {
+        const id = setInterval(() => setTick((n) => n + 1), 30000)
+        return () => clearInterval(id)
     }, [])
     return (
         <div className="w-full max-w-5xl mt-8">

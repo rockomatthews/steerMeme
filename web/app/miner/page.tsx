@@ -5,7 +5,7 @@ import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTr
 import miningStaking from '@/lib/MiningStaking.json'
 import memeToken from '@/lib/MemeToken.json'
 import type { Abi } from 'viem'
-import { formatUnits, parseUnits } from 'viem'
+import { formatUnits, parseUnits, maxUint256 } from 'viem'
 import Image from 'next/image'
 
 const MINER_ADDRESS = process.env.NEXT_PUBLIC_MINER_ADDRESS as `0x${string}` | undefined
@@ -38,6 +38,14 @@ export default function MinerPage() {
 
 	const { data: balance } = useBalance({ address, token: TOKEN_ADDRESS })
 
+	// Allowance of miner to spend $Randy on behalf of user
+	const { data: allowance } = useReadContract({
+		address: TOKEN_ADDRESS,
+		abi: TOKEN_ABI,
+		functionName: 'allowance',
+		args: address && MINER_ADDRESS ? [address, MINER_ADDRESS] : undefined
+	}) as { data: bigint | undefined }
+
 	// Global emissions and tiers
 	const { data: tiers } = useReadContract({
 		address: MINER_ADDRESS,
@@ -57,6 +65,27 @@ const { data: _totalWeighted } = useReadContract({
 		functionName: 'totalWeightedStake'
 	}) as { data: bigint | undefined }
 
+	// Reward token balance held by miner to estimate runway
+	const { data: minerRewardBal } = useBalance({ address: MINER_ADDRESS, token: TOKEN_ADDRESS })
+
+	const rewardRate = _rewardRate ? formatUnits(_rewardRate, TOKEN_DECIMALS) : '0'
+	const totalWeighted = _totalWeighted ? _totalWeighted.toString() : '0'
+	const runwayDays = useMemo(() => {
+		if (!_rewardRate || !minerRewardBal?.value) return '—'
+		if (_rewardRate === 0n) return '∞'
+		const seconds = minerRewardBal.value / _rewardRate
+		const days = Number(seconds) / (60 * 60 * 24)
+		return days.toFixed(1)
+	}, [_rewardRate, minerRewardBal])
+
+	// DEX buy link (Base)
+	const buyUrl = useMemo(() => {
+		if (!TOKEN_ADDRESS) return undefined
+		// Use Uniswap v2/permutations friendly aggregator like Baseswap or Uniswap interface if available
+		// Fallback to basescan token page
+		return `https://basescan.org/token/${TOKEN_ADDRESS}`
+	}, [])
+
 	// Writes
 	const { writeContract, data: hash } = useWriteContract()
 	useWaitForTransactionReceipt({ hash })
@@ -65,21 +94,41 @@ const { data: _totalWeighted } = useReadContract({
 	const formattedStake = staked ? formatUnits(staked.staked, TOKEN_DECIMALS) : '0'
 	const formattedEarned = earned ? formatUnits(earned, TOKEN_DECIMALS) : '0'
 
+	const amountBN = useMemo(() => {
+		try {
+			return amount ? parseUnits(amount, TOKEN_DECIMALS) : 0n
+		} catch {
+			return 0n
+		}
+	}, [amount])
+
+	const needsApproval = useMemo(() => {
+		if (!MINER_ADDRESS || !TOKEN_ADDRESS) return true
+		if (!amountBN) return false
+		if (allowance === undefined) return true
+		return allowance < amountBN
+	}, [allowance, amountBN])
+
 	function approve() {
 		if (!TOKEN_ADDRESS || !MINER_ADDRESS) return
-		writeContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'approve', args: [MINER_ADDRESS, parseUnits('115792089237316195423570985008687907853269984665640564039457', TOKEN_DECIMALS)] })
+		writeContract({ address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: 'approve', args: [MINER_ADDRESS, maxUint256] })
 	}
 	function stake() {
-		if (!MINER_ADDRESS || !amount) return
-		writeContract({ address: MINER_ADDRESS, abi: MINER_ABI, functionName: 'stake', args: [parseUnits(amount, TOKEN_DECIMALS)] })
+		if (!MINER_ADDRESS || !amountBN) return
+		writeContract({ address: MINER_ADDRESS, abi: MINER_ABI, functionName: 'stake', args: [amountBN] })
 	}
 	function withdraw() {
-		if (!MINER_ADDRESS || !amount) return
-		writeContract({ address: MINER_ADDRESS, abi: MINER_ABI, functionName: 'withdraw', args: [parseUnits(amount, TOKEN_DECIMALS)] })
+		if (!MINER_ADDRESS || !amountBN) return
+		writeContract({ address: MINER_ADDRESS, abi: MINER_ABI, functionName: 'withdraw', args: [amountBN] })
 	}
 	function claim() {
 		if (!MINER_ADDRESS) return
 		writeContract({ address: MINER_ADDRESS, abi: MINER_ABI, functionName: 'getReward', args: [] })
+	}
+
+	function setMax() {
+		if (!balance?.value) return
+		setAmount(formatUnits(balance.value, TOKEN_DECIMALS))
 	}
 
 	const explorerBase = chainId === 8453 ? 'https://basescan.org' : 'https://sepolia.basescan.org'
@@ -115,29 +164,39 @@ const { data: _totalWeighted } = useReadContract({
 			<div className="flex items-center gap-3">
 				<Image src="/randy.png" alt="Randy" width={56} height={56} />
 				<div>
-					<h1 className="text-2xl font-bold text-yellow-300">Randy Mining</h1>
-					<p className="text-sm text-yellow-200">The more you stake, the faster you mine</p>
+					<h1 className="text-2xl font-bold text-yellow-300 sp-title">Randy Mining</h1>
+					<p className="text-sm text-yellow-200">Stake $Randy (ERC-20), not ETH. Approve once, then stake to mine.</p>
 				</div>
 			</div>
 
 			<div className="grid gap-2 text-sm">
 				<div>Connected: {address || '—'}</div>
 				<div>Network: {chainId}</div>
-				<div>Balance: {balance ? `${balance.formatted} ${balance.symbol}` : '—'}</div>
+				<div>Balance ($Randy): {balance ? `${balance.formatted} ${balance.symbol}` : '—'}</div>
+				{allowance !== undefined && (
+					<div>Allowance → Miner: {formatUnits(allowance, TOKEN_DECIMALS)}</div>
+				)}
 				<div>Staked: {formattedStake}</div>
 				<div>Unclaimed: {formattedEarned}</div>
+				<div>Reward rate: {rewardRate} / sec</div>
+				<div>Total weighted stake: {totalWeighted}</div>
+				<div>Runway (days): {runwayDays}</div>
 				{pendingHash && <a className="text-blue-600" target="_blank" href={`${explorerBase}/tx/${pendingHash}`}>View tx</a>}
 			</div>
 
 			<div className="flex gap-2 items-end">
 				<div className="flex-1">
-					<label className="block text-sm mb-1">Amount</label>
-					<input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.0" className="w-full border rounded px-3 py-2 border-yellow-400 bg-yellow-400/10 text-yellow-200" />
+					<label className="block text-sm mb-1">Amount of $Randy</label>
+					<div className="flex gap-2">
+						<input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.0" className="w-full border rounded px-3 py-2 border-yellow-400 bg-yellow-400/10 text-yellow-200" />
+						<button onClick={setMax} className="px-3 py-2 rounded text-xs font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20">Max</button>
+					</div>
 				</div>
-				<button onClick={approve} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Approve</button>
-				<button onClick={stake} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Stake</button>
-				<button onClick={withdraw} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Withdraw</button>
-				<button onClick={claim} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)]">Claim</button>
+				{buyUrl && <a href={buyUrl} target="_blank" className="px-6 py-3 rounded text-sm font-bold border-2 border-green-400 text-green-300 bg-green-400/10 hover:bg-green-400/20 shadow-[0_0_20px_rgba(74,222,128,0.35)]">Buy</a>}
+				<button onClick={approve} disabled={!amountBN || !TOKEN_ADDRESS || !MINER_ADDRESS || !needsApproval} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">{needsApproval ? 'Approve $Randy' : 'Approved'}</button>
+				<button onClick={stake} disabled={!amountBN || needsApproval || !MINER_ADDRESS} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Stake</button>
+				<button onClick={withdraw} disabled={!amountBN || !MINER_ADDRESS} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Withdraw</button>
+				<button onClick={claim} disabled={!MINER_ADDRESS} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Claim</button>
 			</div>
 
 			{/* Simple SVG graph of mining speed vs stake */}
