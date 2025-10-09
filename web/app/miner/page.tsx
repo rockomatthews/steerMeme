@@ -20,6 +20,8 @@ export default function MinerPage() {
 	const chainId = useChainId()
 	const [amount, setAmount] = useState('')
 	const [pendingHash, setPendingHash] = useState<`0x${string}` | undefined>()
+	const [lockDays, setLockDays] = useState<number>(0)
+	const [liveEarned, setLiveEarned] = useState<bigint>(0n)
 
 	// Reads
 	const { data: staked } = useReadContract({
@@ -27,7 +29,7 @@ export default function MinerPage() {
 		abi: MINER_ABI,
 		functionName: 'users',
 		args: address ? [address] : undefined
-	}) as { data: { staked: bigint, weightedStake: bigint, rewardsAccrued: bigint, userRewardPerWeightedStakePaid: bigint } | undefined }
+	}) as { data: { staked: bigint, weightedStake: bigint, rewardsAccrued: bigint, userRewardPerWeightedStakePaid: bigint, lockEnd?: bigint, lockBoostMultiplier?: bigint } | undefined }
 
 	const { data: earned } = useReadContract({
 		address: MINER_ADDRESS,
@@ -63,6 +65,14 @@ const { data: _totalWeighted } = useReadContract({
 		address: MINER_ADDRESS,
 		abi: MINER_ABI,
 		functionName: 'totalWeightedStake'
+	}) as { data: bigint | undefined }
+
+	// Current user multiplier (considers lock + tiers on-chain)
+	const { data: _userMult } = useReadContract({
+		address: MINER_ADDRESS,
+		abi: MINER_ABI,
+		functionName: 'currentUserMultiplier',
+		args: address ? [address] : undefined
 	}) as { data: bigint | undefined }
 
 	// Reward token balance held by miner to estimate runway
@@ -115,7 +125,12 @@ const { data: _totalWeighted } = useReadContract({
 	}
 	function stake() {
 		if (!MINER_ADDRESS || !amountBN) return
-		writeContract({ address: MINER_ADDRESS, abi: MINER_ABI, functionName: 'stake', args: [amountBN] })
+		const seconds = BigInt(Math.max(0, Math.min(365, lockDays))) * 86400n
+		if (seconds > 0n) {
+			writeContract({ address: MINER_ADDRESS, abi: MINER_ABI, functionName: 'stakeWithLock', args: [amountBN, seconds] })
+		} else {
+			writeContract({ address: MINER_ADDRESS, abi: MINER_ABI, functionName: 'stake', args: [amountBN] })
+		}
 	}
 	function withdraw() {
 		if (!MINER_ADDRESS || !amountBN) return
@@ -132,6 +147,21 @@ const { data: _totalWeighted } = useReadContract({
 	}
 
 	const explorerBase = chainId === 8453 ? 'https://basescan.org' : 'https://sepolia.basescan.org'
+	// Live mined counter: increment from earned() using per-second share
+	useEffect(() => {
+		const base = earned ?? 0n
+		setLiveEarned(base)
+		if (!_rewardRate || !_totalWeighted || _totalWeighted === 0n) return
+		const userStaked = staked?.staked ?? 0n
+		const mult = _userMult ?? 1000000000000000000n // 1e18
+		const userWeighted = (userStaked * mult) / 1000000000000000000n
+		const perSecWei = (_rewardRate * userWeighted) / _totalWeighted
+		if (perSecWei === 0n) return
+		const id = setInterval(() => {
+			setLiveEarned((prev) => prev + perSecWei)
+		}, 1000)
+		return () => clearInterval(id)
+	}, [earned, _rewardRate, _totalWeighted, staked?.staked, _userMult])
 
 	// Graph data: show relative mining speed = stake * multiplier (scaled)
 	const graphPoints = useMemo(() => {
@@ -178,6 +208,7 @@ const { data: _totalWeighted } = useReadContract({
 				)}
 				<div>Staked: {formattedStake}</div>
 				<div>Unclaimed: {formattedEarned}</div>
+				<div>Remaining to mine: {minerRewardBal?.value ? formatUnits(minerRewardBal.value, TOKEN_DECIMALS) : '—'}</div>
 				<div>Reward rate: {rewardRate} / sec</div>
 				<div>Total weighted stake: {totalWeighted}</div>
 				<div>Runway (days): {runwayDays}</div>
@@ -198,6 +229,16 @@ const { data: _totalWeighted } = useReadContract({
 				<button onClick={withdraw} disabled={!amountBN || !MINER_ADDRESS} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Withdraw</button>
 				<button onClick={claim} disabled={!MINER_ADDRESS} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Claim</button>
 			</div>
+
+			{/* Lock slider */}
+			<div className="border border-yellow-400/60 rounded p-3">
+				<label className="block text-sm mb-1">Lock period (days): {lockDays}</label>
+				<input type="range" min={0} max={365} value={lockDays} onChange={(e)=>setLockDays(Number(e.target.value))} className="w-full" />
+				<p className="text-xs text-yellow-200 mt-1">Boost: {(1 + (2 * lockDays) / 365).toFixed(2)}x. Withdraw disabled until lock ends.</p>
+			</div>
+
+			{/* Live mined counter */}
+			<div className="text-sm">Mined $RANDY (live): {formatUnits(liveEarned, TOKEN_DECIMALS)}</div>
 
 			{/* Simple SVG graph of mining speed vs stake */}
 			{graphPoints.length > 0 && (

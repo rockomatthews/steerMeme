@@ -395,6 +395,24 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lockSeconds",
+          "type": "uint256"
+        }
+      ],
+      "name": "stakeWithLock",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "stakeToken",
       "outputs": [
@@ -531,11 +549,53 @@
           "internalType": "uint256",
           "name": "userRewardPerWeightedStakePaid",
           "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lockEnd",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lockBoostMultiplier",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
       "type": "function"
     },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "currentUserMultiplier",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "remainingRewards",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
     {
       "inputs": [
         {

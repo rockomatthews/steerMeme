@@ -35,6 +35,8 @@ contract MiningStaking is Ownable, ReentrancyGuard {
         uint256 weightedStake;
         uint256 rewardsAccrued; // unclaimed
         uint256 userRewardPerWeightedStakePaid; // checkpoint
+        uint256 lockEnd; // timestamp until which withdraw is locked
+        uint256 lockBoostMultiplier; // scaled 1e18 (1e18 = 1x)
     }
 
     mapping(address => UserInfo) public users;
@@ -48,6 +50,10 @@ contract MiningStaking is Ownable, ReentrancyGuard {
     event RewardPaid(address indexed user, uint256 reward);
     event RewardRateUpdated(uint256 oldRate, uint256 newRate);
     event TiersUpdated();
+    event LockUpdated(address indexed user, uint256 lockEnd, uint256 lockBoostMultiplier);
+
+    uint256 public constant MAX_LOCK_SECONDS = 365 days;
+    uint256 public constant MAX_LOCK_BOOST = 3e18; // 3.0x
 
     constructor(
         address owner_,
@@ -113,8 +119,42 @@ contract MiningStaking is Ownable, ReentrancyGuard {
         UserInfo storage u = users[msg.sender];
         u.staked += amount;
 
-        // recalc multiplier and weighted stake
-        uint256 newMultiplier = currentMultiplier(u.staked);
+        // recalc multiplier and weighted stake considering tier vs active lock
+        uint256 newMultiplier = _currentUserMultiplier(msg.sender, u);
+        uint256 newWeighted = (u.staked * newMultiplier) / 1e18;
+        totalWeightedStake = totalWeightedStake - u.weightedStake + newWeighted;
+        u.weightedStake = newWeighted;
+
+        emit Staked(msg.sender, amount, u.staked);
+    }
+
+    function stakeWithLock(uint256 amount, uint256 lockSeconds) external nonReentrant updateReward(msg.sender) {
+        require(amount > 0, "amount=0");
+        if (lockSeconds > MAX_LOCK_SECONDS) {
+            lockSeconds = MAX_LOCK_SECONDS;
+        }
+        stakeToken.safeTransferFrom(msg.sender, address(this), amount);
+
+        totalStaked += amount;
+
+        UserInfo storage u = users[msg.sender];
+        u.staked += amount;
+
+        // compute boost 1.0x .. 3.0x linearly with duration
+        uint256 boost = 1e18 + ((MAX_LOCK_BOOST - 1e18) * lockSeconds) / MAX_LOCK_SECONDS;
+        if (boost > MAX_LOCK_BOOST) boost = MAX_LOCK_BOOST;
+
+        uint256 newLockEnd = block.timestamp + lockSeconds;
+        if (newLockEnd > u.lockEnd) {
+            u.lockEnd = newLockEnd;
+        }
+        if (boost > u.lockBoostMultiplier) {
+            u.lockBoostMultiplier = boost;
+        }
+        emit LockUpdated(msg.sender, u.lockEnd, u.lockBoostMultiplier);
+
+        // recalc multiplier and weighted stake with lock considered
+        uint256 newMultiplier = _currentUserMultiplier(msg.sender, u);
         uint256 newWeighted = (u.staked * newMultiplier) / 1e18;
         totalWeightedStake = totalWeightedStake - u.weightedStake + newWeighted;
         u.weightedStake = newWeighted;
@@ -126,11 +166,12 @@ contract MiningStaking is Ownable, ReentrancyGuard {
         require(amount > 0, "amount=0");
         UserInfo storage u = users[msg.sender];
         require(u.staked >= amount, "exceeds stake");
+        require(block.timestamp >= u.lockEnd, "locked");
 
         u.staked -= amount;
         totalStaked -= amount;
 
-        uint256 newMultiplier = currentMultiplier(u.staked);
+        uint256 newMultiplier = _currentUserMultiplier(msg.sender, u);
         uint256 newWeighted = (u.staked * newMultiplier) / 1e18;
         totalWeightedStake = totalWeightedStake - u.weightedStake + newWeighted;
         u.weightedStake = newWeighted;
@@ -190,8 +231,34 @@ contract MiningStaking is Ownable, ReentrancyGuard {
             }
             u.rewardsAccrued += accrued;
             u.userRewardPerWeightedStakePaid = rpw;
+
+            // lazily refresh weighted stake (e.g., when lock expires or tiers changed)
+            uint256 mNow = _currentUserMultiplier(account, u);
+            uint256 wNow = (u.staked * mNow) / 1e18;
+            if (wNow != u.weightedStake) {
+                totalWeightedStake = totalWeightedStake - u.weightedStake + wNow;
+                u.weightedStake = wNow;
+            }
         }
         _;
+    }
+
+    // ===== Additional views/helpers =====
+    function _currentUserMultiplier(address /*account*/, UserInfo storage u) internal view returns (uint256) {
+        uint256 tierM = currentMultiplier(u.staked);
+        uint256 lockM = (block.timestamp < u.lockEnd && u.lockBoostMultiplier > 0) ? u.lockBoostMultiplier : 1e18;
+        return tierM >= lockM ? tierM : lockM;
+    }
+
+    function currentUserMultiplier(address account) external view returns (uint256) {
+        UserInfo storage u = users[account];
+        uint256 tierM = currentMultiplier(u.staked);
+        uint256 lockM = (block.timestamp < u.lockEnd && u.lockBoostMultiplier > 0) ? u.lockBoostMultiplier : 1e18;
+        return tierM >= lockM ? tierM : lockM;
+    }
+
+    function remainingRewards() external view returns (uint256) {
+        return IERC20(rewardToken).balanceOf(address(this));
     }
 }
 
