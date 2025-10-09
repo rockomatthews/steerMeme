@@ -14,7 +14,7 @@ async function tryRead(filePath: string): Promise<string | null> {
   }
 }
 
-export async function GET(_req: Request, { params }: { params: { address: string } }) {
+export async function GET(_req: Request, { params }: { params: Record<string, string> }) {
   const addressRaw = params?.address || ''
   if (!isAddress(addressRaw)) {
     return new Response(JSON.stringify({ ok: false, error: 'invalid address' }), {
