@@ -1,4 +1,3 @@
-import type { NextRequest } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
 
@@ -15,8 +14,8 @@ async function tryRead(filePath: string): Promise<string | null> {
   }
 }
 
-export async function GET(_req: NextRequest, ctx: { params: { address: string } }) {
-  const addressRaw = ctx?.params?.address || ''
+export async function GET(_req: Request, { params }: { params: { address: string } }) {
+  const addressRaw = params?.address || ''
   if (!isAddress(addressRaw)) {
     return new Response(JSON.stringify({ ok: false, error: 'invalid address' }), {
       status: 400,
@@ -33,7 +32,6 @@ export async function GET(_req: NextRequest, ctx: { params: { address: string } 
 
   let body: string | null = null
   for (const p of candidates) {
-    // eslint-disable-next-line no-await-in-loop
     body = await tryRead(p)
     if (body) break
   }
