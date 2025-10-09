@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -300,8 +299,9 @@ export default function LaunchPage() {
 				</div>
 			</div>
 			<TextField label="Dev Buy (ETH)" value={devBuyEth} onChange={(e)=>setDevBuyEth(e.target.value)} placeholder="0" />
-			<Button onClick={deploy} variant="contained" disabled={activeChain.id !== base.id} className="w-fit px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-black bg-yellow-300 hover:bg-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Deploy</Button>
-			{creationFeeUsd && <div className="text-xs opacity-80">Creation fee: ~${creationFeeUsd} (wei {creationFeeWei})</div>}
+			<button onClick={deploy} disabled={activeChain.id !== base.id} className="w-fit px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Deploy</button>
+			<div className="text-xs text-yellow-300">Your latest settings will be deployed. If nothing changed, this reuses your previous configuration.</div>
+			{creationFeeUsd && <div className="text-xs text-yellow-300">Approx creation fee (est.): ${creationFeeUsd} (wei {creationFeeWei})</div>}
 
 			{/* Educational: Vault, Lockup, Vesting strategies */}
 			<div className="mt-6 space-y-3 text-yellow-200">
