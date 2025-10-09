@@ -97,7 +97,24 @@ function main() {
       name: tokenName,
       symbol: tokenSymbol,
       decimals: tokenDecimals,
-      logoURI: logoUri
+      logoURI: logoUri,
+      // Clanker-style mirrors to help scrapers
+      image: logoUri || undefined,
+      metadata: {
+        description: description || undefined,
+        socialMediaUrls: [
+          ...(website ? [{ platform: 'website', url: website }] : []),
+          ...((twitter || x) ? [{ platform: 'x', url: twitter || x }] : []),
+          ...(telegram ? [{ platform: 'telegram', url: telegram }] : []),
+          ...(discord ? [{ platform: 'discord', url: discord }] : []),
+          ...(instagram ? [{ platform: 'instagram', url: instagram }] : []),
+          ...(farcaster ? [{ platform: 'farcaster', url: farcaster }] : []),
+          ...(github ? [{ platform: 'github', url: github }] : []),
+          ...(medium ? [{ platform: 'medium', url: medium }] : [])
+        ],
+        auditUrls: []
+      },
+      context: { interface: 'steermeme' }
     };
     if (Object.keys(extensions).length > 0) {
       token.extensions = extensions;

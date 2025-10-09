@@ -28,6 +28,17 @@ function main() {
   const github = process.env.TOKEN_GITHUB || "";
   const medium = process.env.TOKEN_MEDIUM || "";
 
+  // Clanker-style socials array
+  const socialMediaUrls = [];
+  if (twitter) socialMediaUrls.push({ platform: 'x', url: twitter });
+  if (website) socialMediaUrls.push({ platform: 'website', url: website });
+  if (telegram) socialMediaUrls.push({ platform: 'telegram', url: telegram });
+  if (discord) socialMediaUrls.push({ platform: 'discord', url: discord });
+  if (instagram) socialMediaUrls.push({ platform: 'instagram', url: instagram });
+  if (farcaster) socialMediaUrls.push({ platform: 'farcaster', url: farcaster });
+  if (github) socialMediaUrls.push({ platform: 'github', url: github });
+  if (medium) socialMediaUrls.push({ platform: 'medium', url: medium });
+
   const payload = {
     name,
     symbol,
@@ -37,6 +48,15 @@ function main() {
     description,
     website,
     logoURI,
+    image: logoURI || undefined,
+    metadata: {
+      description: description || undefined,
+      socialMediaUrls,
+      auditUrls: []
+    },
+    context: {
+      interface: 'steermeme'
+    },
     links: {
       twitter: twitter || undefined,
       telegram: telegram || undefined,
