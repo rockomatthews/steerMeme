@@ -199,46 +199,82 @@ const { data: _totalWeighted } = useReadContract({
 				</div>
 			</div>
 
-			<div className="grid gap-2 text-sm">
-				<div>Connected: {address || '—'}</div>
-				<div>Network: {chainId}</div>
-				<div>Balance ($Randy): {balance ? `${balance.formatted} ${balance.symbol}` : '—'}</div>
+			<div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-center place-items-center">
+				<div>
+					<div className="text-xs opacity-70">Connected</div>
+					<div className="sp-title text-xl text-yellow-300 break-all">{address || '—'}</div>
+				</div>
+				<div>
+					<div className="text-xs opacity-70">Network</div>
+					<div className="sp-title text-xl text-yellow-300">{chainId}</div>
+				</div>
+				<div>
+					<div className="text-xs opacity-70">Balance ($Randy)</div>
+					<div className="sp-title text-xl text-yellow-300">{balance ? `${balance.formatted}` : '—'}</div>
+				</div>
 				{allowance !== undefined && (
-					<div>Allowance → Miner: {formatUnits(allowance, TOKEN_DECIMALS)}</div>
+					<div>
+						<div className="text-xs opacity-70">Allowance → Miner</div>
+						<div className="sp-title text-xl text-yellow-300">{formatUnits(allowance, TOKEN_DECIMALS)}</div>
+					</div>
 				)}
-				<div>Staked: {formattedStake}</div>
-				<div>Unclaimed: {formattedEarned}</div>
-				<div>Remaining to mine: {minerRewardBal?.value ? formatUnits(minerRewardBal.value, TOKEN_DECIMALS) : '—'}</div>
-				<div>Reward rate: {rewardRate} / sec</div>
-				<div>Total weighted stake: {totalWeighted}</div>
-				<div>Runway (days): {runwayDays}</div>
-				{pendingHash && <a className="text-blue-600" target="_blank" href={`${explorerBase}/tx/${pendingHash}`}>View tx</a>}
+				<div>
+					<div className="text-xs opacity-70">Staked</div>
+					<div className="sp-title text-xl text-yellow-300">{formattedStake}</div>
+				</div>
+				<div>
+					<div className="text-xs opacity-70">Unclaimed</div>
+					<div className="sp-title text-xl text-yellow-300">{formattedEarned}</div>
+				</div>
+				<div>
+					<div className="text-xs opacity-70">Remaining to mine</div>
+					<div className="sp-title text-xl text-yellow-300">{minerRewardBal?.value ? formatUnits(minerRewardBal.value, TOKEN_DECIMALS) : '—'}</div>
+				</div>
+				<div>
+					<div className="text-xs opacity-70">Reward rate</div>
+					<div className="sp-title text-xl text-yellow-300">{rewardRate} / sec</div>
+				</div>
+				<div>
+					<div className="text-xs opacity-70">Total weighted stake</div>
+					<div className="sp-title text-xl text-yellow-300">{totalWeighted}</div>
+				</div>
+				<div>
+					<div className="text-xs opacity-70">Runway (days)</div>
+					<div className="sp-title text-xl text-yellow-300">{runwayDays}</div>
+				</div>
 			</div>
+			{pendingHash && <div className="text-center"><a className="text-blue-600" target="_blank" href={`${explorerBase}/tx/${pendingHash}`}>View tx</a></div>}
 
-			<div className="flex gap-2 items-end">
-				<div className="flex-1">
-					<label className="block text-sm mb-1">Amount of $Randy</label>
-					<div className="flex gap-2">
-						<input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.0" className="w-full border rounded px-3 py-2 border-yellow-400 bg-yellow-400/10 text-yellow-200" />
-						<button onClick={setMax} className="px-3 py-2 rounded text-xs font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20">Max</button>
+			<div className="flex flex-col items-center gap-4">
+				<div className="w-full max-w-xl">
+					<label className="block text-center text-sm mb-2">Amount of $Randy</label>
+					<div className="flex gap-2 items-center justify-center">
+						<input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.0" className="sp-title text-2xl text-yellow-300 w-full max-w-md border rounded px-4 py-3 border-yellow-400 bg-yellow-400/10" />
+						<button onClick={setMax} className="px-4 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20">Max</button>
 					</div>
 				</div>
-				{buyUrl && <a href={buyUrl} target="_blank" className="px-6 py-3 rounded text-sm font-bold border-2 border-green-400 text-green-300 bg-green-400/10 hover:bg-green-400/20 shadow-[0_0_20px_rgba(74,222,128,0.35)]">Buy</a>}
-				<button onClick={approve} disabled={!amountBN || !TOKEN_ADDRESS || !MINER_ADDRESS || !needsApproval} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">{needsApproval ? 'Approve $Randy' : 'Approved'}</button>
-				<button onClick={stake} disabled={!amountBN || needsApproval || !MINER_ADDRESS} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Stake</button>
-				<button onClick={withdraw} disabled={!amountBN || !MINER_ADDRESS} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Withdraw</button>
-				<button onClick={claim} disabled={!MINER_ADDRESS} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Claim</button>
+				<div className="flex flex-wrap items-center justify-center gap-3">
+					{buyUrl && <a href={buyUrl} target="_blank" className="px-6 py-3 rounded text-sm font-bold border-2 border-green-400 text-green-300 bg-green-400/10 hover:bg-green-400/20 shadow-[0_0_20px_rgba(74,222,128,0.35)]">Buy</a>}
+					<button onClick={approve} disabled={!amountBN || !TOKEN_ADDRESS || !MINER_ADDRESS || !needsApproval} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">{needsApproval ? 'Approve $Randy' : 'Approved'}</button>
+					<button onClick={stake} disabled={!amountBN || needsApproval || !MINER_ADDRESS} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Stake</button>
+					<button onClick={withdraw} disabled={!amountBN || !MINER_ADDRESS} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Withdraw</button>
+					<button onClick={claim} disabled={!MINER_ADDRESS} className="px-6 py-3 rounded text-sm font-bold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 disabled:opacity-50 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Claim</button>
+				</div>
 			</div>
 
 			{/* Lock slider */}
-			<div className="border border-yellow-400/60 rounded p-3">
-				<label className="block text-sm mb-1">Lock period (days): {lockDays}</label>
+			<div className="border border-yellow-400/60 rounded p-4 text-center">
+				<label className="block text-sm mb-2">Lock period (days)</label>
+				<div className="sp-title text-2xl text-yellow-300 mb-2">{lockDays}</div>
 				<input type="range" min={0} max={365} value={lockDays} onChange={(e)=>setLockDays(Number(e.target.value))} className="w-full" />
-				<p className="text-xs text-yellow-200 mt-1">Boost: {(1 + (2 * lockDays) / 365).toFixed(2)}x. Withdraw disabled until lock ends.</p>
+				<p className="text-xs text-yellow-200 mt-2">Boost: {(1 + (2 * lockDays) / 365).toFixed(2)}x. Withdraw disabled until lock ends.</p>
 			</div>
 
 			{/* Live mined counter */}
-			<div className="text-sm">Mined $RANDY (live): {formatUnits(liveEarned, TOKEN_DECIMALS)}</div>
+			<div className="text-center">
+				<div className="text-xs opacity-70">Mined $RANDY (live)</div>
+				<div className="sp-title text-2xl text-yellow-300">{formatUnits(liveEarned, TOKEN_DECIMALS)}</div>
+			</div>
 
 			{/* Simple SVG graph of mining speed vs stake */}
 			{graphPoints.length > 0 && (
