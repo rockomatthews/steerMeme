@@ -130,7 +130,7 @@ export default function LaunchPage() {
                 vanity,
                 image: image || undefined,
 				metadata: { description: description || undefined, socialMediaUrls: socials, auditUrls: [] },
-				context: { interface: 'steermeme', site: (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://www.randymining.com' },
+				context: { interface: 'steermeme' },
                 rewards: {
                     recipients: [
                         { recipient: address as `0x${string}`, admin: address as `0x${string}`, bps: 9800, token: "Paired" },
