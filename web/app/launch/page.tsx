@@ -123,16 +123,14 @@ export default function LaunchPage() {
 			if (isUrl(github)) socials.push({ platform: 'github', url: github });
 			if (isUrl(medium)) socials.push({ platform: 'medium', url: medium });
 			if (isUrl(youtube)) socials.push({ platform: 'youtube', url: youtube });
-			const metadataJson = JSON.stringify({ description: description || undefined, socialMediaUrls: socials, auditUrls: [] });
-			const contextJson = JSON.stringify({ interface: 'steermeme', site: (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://www.randymining.com' });
 			let tokenConfig: DeployArg = {
                 name,
                 symbol,
                 tokenAdmin: address as `0x${string}`,
                 vanity,
                 image: image || undefined,
-				metadata: metadataJson,
-				context: contextJson,
+				metadata: { description: description || undefined, socialMediaUrls: socials, auditUrls: [] },
+				context: { interface: 'steermeme', site: (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://www.randymining.com' },
                 rewards: {
                     recipients: [
                         { recipient: address as `0x${string}`, admin: address as `0x${string}`, bps: 9800, token: "Paired" },
