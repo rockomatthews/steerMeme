@@ -46,6 +46,11 @@ export default function LaunchPage() {
 	const [website, setWebsite] = useState("");
 	const [telegram, setTelegram] = useState("");
 	const [farcaster, setFarcaster] = useState("");
+	const [instagram, setInstagram] = useState("");
+	const [discord, setDiscord] = useState("");
+	const [github, setGithub] = useState("");
+	const [medium, setMedium] = useState("");
+	const [youtube, setYoutube] = useState("");
 	const [feeType, setFeeType] = useState<"static"|"default">("default");
 	const [clankerFeeBps, setClankerFeeBps] = useState("100");
 	const [pairedFeeBps, setPairedFeeBps] = useState("100");
@@ -107,22 +112,27 @@ export default function LaunchPage() {
 					value: BigInt(feeJson.wei)
 				})
             type DeployArg = Parameters<typeof clanker.deploy>[0];
+			const isUrl = (u: string) => /^https:\/\//i.test(u);
 			const socials: { platform: string; url: string }[] = [];
-            if (twitter) socials.push({ platform: 'x', url: twitter });
-            if (website) socials.push({ platform: 'website', url: website });
-			if (telegram) socials.push({ platform: 'telegram', url: telegram });
-			if (farcaster) socials.push({ platform: 'farcaster', url: farcaster });
+			if (isUrl(website)) socials.push({ platform: 'website', url: website });
+			if (isUrl(twitter)) socials.push({ platform: 'x', url: twitter });
+			if (isUrl(telegram)) socials.push({ platform: 'telegram', url: telegram });
+			if (isUrl(farcaster)) socials.push({ platform: 'farcaster', url: farcaster });
+			if (isUrl(instagram)) socials.push({ platform: 'instagram', url: instagram });
+			if (isUrl(discord)) socials.push({ platform: 'discord', url: discord });
+			if (isUrl(github)) socials.push({ platform: 'github', url: github });
+			if (isUrl(medium)) socials.push({ platform: 'medium', url: medium });
+			if (isUrl(youtube)) socials.push({ platform: 'youtube', url: youtube });
+			const metadataJson = JSON.stringify({ description: description || undefined, socialMediaUrls: socials, auditUrls: [] });
+			const contextJson = JSON.stringify({ interface: 'steermeme', site: (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://www.randymining.com' });
 			let tokenConfig: DeployArg = {
                 name,
                 symbol,
                 tokenAdmin: address as `0x${string}`,
                 vanity,
                 image: image || undefined,
-                metadata: {
-                    description: description || undefined,
-					socialMediaUrls: socials,
-                },
-                context: { interface: 'steermeme' },
+				metadata: metadataJson,
+				context: contextJson,
                 rewards: {
                     recipients: [
                         { recipient: address as `0x${string}`, admin: address as `0x${string}`, bps: 9800, token: "Paired" },
@@ -253,6 +263,11 @@ export default function LaunchPage() {
 			<TextField label="Website URL" value={website} onChange={(e)=>setWebsite(e.target.value)} placeholder="https://yoursite" />
 			<TextField label="Telegram URL" value={telegram} onChange={(e)=>setTelegram(e.target.value)} placeholder="https://t.me/yourchannel" />
 			<TextField label="Farcaster URL" value={farcaster} onChange={(e)=>setFarcaster(e.target.value)} placeholder="https://warpcast.com/username" />
+			<TextField label="Instagram URL" value={instagram} onChange={(e)=>setInstagram(e.target.value)} placeholder="https://instagram.com/yourhandle" />
+			<TextField label="Discord URL" value={discord} onChange={(e)=>setDiscord(e.target.value)} placeholder="https://discord.gg/yourinvite" />
+			<TextField label="GitHub URL" value={github} onChange={(e)=>setGithub(e.target.value)} placeholder="https://github.com/yourorg" />
+			<TextField label="Medium URL" value={medium} onChange={(e)=>setMedium(e.target.value)} placeholder="https://medium.com/@yourhandle" />
+			<TextField label="YouTube URL" value={youtube} onChange={(e)=>setYoutube(e.target.value)} placeholder="https://youtube.com/@yourchannel" />
 			<FormControlLabel control={<Checkbox checked={vanity} onChange={(e)=>setVanity(e.target.checked)} />} label="Vanity suffix" />
 			<div className="grid grid-cols-2 gap-3">
 				<div>
