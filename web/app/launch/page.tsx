@@ -44,13 +44,7 @@ export default function LaunchPage() {
 	const [description, setDescription] = useState("");
 	const [twitter, setTwitter] = useState("");
 	const [website, setWebsite] = useState("");
-	const [telegram, setTelegram] = useState("");
-	const [farcaster, setFarcaster] = useState("");
-	const [instagram, setInstagram] = useState("");
-	const [discord, setDiscord] = useState("");
-	const [github, setGithub] = useState("");
-	const [medium, setMedium] = useState("");
-	const [youtube, setYoutube] = useState("");
+	// Only keep X (Twitter) and Website to minimize on-chain metadata size
 	const [feeType, setFeeType] = useState<"static"|"default">("default");
 	const [clankerFeeBps, setClankerFeeBps] = useState("100");
 	const [pairedFeeBps, setPairedFeeBps] = useState("100");
@@ -116,13 +110,6 @@ export default function LaunchPage() {
 			const socials: { platform: string; url: string }[] = [];
 			if (isUrl(website)) socials.push({ platform: 'website', url: website });
 			if (isUrl(twitter)) socials.push({ platform: 'x', url: twitter });
-			if (isUrl(telegram)) socials.push({ platform: 'telegram', url: telegram });
-			if (isUrl(farcaster)) socials.push({ platform: 'farcaster', url: farcaster });
-			if (isUrl(instagram)) socials.push({ platform: 'instagram', url: instagram });
-			if (isUrl(discord)) socials.push({ platform: 'discord', url: discord });
-			if (isUrl(github)) socials.push({ platform: 'github', url: github });
-			if (isUrl(medium)) socials.push({ platform: 'medium', url: medium });
-			if (isUrl(youtube)) socials.push({ platform: 'youtube', url: youtube });
 			let tokenConfig: DeployArg = {
                 name,
                 symbol,
@@ -259,13 +246,6 @@ export default function LaunchPage() {
 			<TextField label="Description" multiline minRows={3} value={description} onChange={(e)=>setDescription(e.target.value)} placeholder="What is your token?" />
 			<TextField label="Twitter URL" value={twitter} onChange={(e)=>setTwitter(e.target.value)} placeholder="https://x.com/handle" />
 			<TextField label="Website URL" value={website} onChange={(e)=>setWebsite(e.target.value)} placeholder="https://yoursite" />
-			<TextField label="Telegram URL" value={telegram} onChange={(e)=>setTelegram(e.target.value)} placeholder="https://t.me/yourchannel" />
-			<TextField label="Farcaster URL" value={farcaster} onChange={(e)=>setFarcaster(e.target.value)} placeholder="https://warpcast.com/username" />
-			<TextField label="Instagram URL" value={instagram} onChange={(e)=>setInstagram(e.target.value)} placeholder="https://instagram.com/yourhandle" />
-			<TextField label="Discord URL" value={discord} onChange={(e)=>setDiscord(e.target.value)} placeholder="https://discord.gg/yourinvite" />
-			<TextField label="GitHub URL" value={github} onChange={(e)=>setGithub(e.target.value)} placeholder="https://github.com/yourorg" />
-			<TextField label="Medium URL" value={medium} onChange={(e)=>setMedium(e.target.value)} placeholder="https://medium.com/@yourhandle" />
-			<TextField label="YouTube URL" value={youtube} onChange={(e)=>setYoutube(e.target.value)} placeholder="https://youtube.com/@yourchannel" />
 			<FormControlLabel control={<Checkbox checked={vanity} onChange={(e)=>setVanity(e.target.checked)} />} label="Vanity suffix" />
 			<div className="grid grid-cols-2 gap-3">
 				<div>
