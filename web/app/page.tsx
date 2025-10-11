@@ -4,12 +4,25 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 export default function Home() {
+	const TOKEN_ADDRESS = process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}` | undefined
+	const buyUrl = TOKEN_ADDRESS
+		? `https://app.uniswap.org/swap?chain=base&outputCurrency=${TOKEN_ADDRESS}`
+		: undefined
 	return (
 		<main className="min-h-dvh flex flex-col items-center justify-center gap-8 p-8">
 			<Image src="/randy.png" alt="Randy" width={128} height={128} priority />
 			<h1 className="text-3xl font-bold text-yellow-300 sp-title">Randy Mining</h1>
 			<p className="opacity-80 text-yellow-200">The more you stake, the faster you mine</p>
-			<div className="flex gap-4">
+			<div className="flex gap-4 flex-wrap items-center justify-center">
+				{buyUrl && (
+					<a
+						href={buyUrl}
+						target="_blank"
+						className="px-6 py-3 rounded text-xl font-extrabold border-2 border-green-400 text-green-300 bg-green-400/10 hover:bg-green-400/20 shadow-[0_0_20px_rgba(74,222,128,0.35)] sp-btn"
+					>
+						Buy $RANDY
+					</a>
+				)}
 				<Link href="/miner" className="px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Open Miner</Link>
 				<Link href="/launch" className="px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Launch your own token!</Link>
 			</div>

@@ -22,6 +22,7 @@ export default function MinerPage() {
 	const [pendingHash, setPendingHash] = useState<`0x${string}` | undefined>()
 	const [lockDays, setLockDays] = useState<number>(0)
 	const [liveEarned, setLiveEarned] = useState<bigint>(0n)
+	const [previewPriceUsd, setPreviewPriceUsd] = useState<string>('')
 
 	// Reads
 	const { data: staked } = useReadContract({
@@ -163,6 +164,50 @@ const { data: _totalWeighted } = useReadContract({
 		return () => clearInterval(id)
 	}, [earned, _rewardRate, _totalWeighted, staked?.staked, _userMult])
 
+	// ===== Preview calculations (before locking) =====
+	const preview = useMemo(() => {
+		if (!_rewardRate || !_totalWeighted) {
+			return { perSec: 0n, day: 0n, week: 0n, month: 0n, usdDay: 0, usdWeek: 0, usdMonth: 0 }
+		}
+		const SCALE = 1000000000000000000n
+		const amt = amountBN
+		const currentStaked = staked?.staked ?? 0n
+		const currentWeighted = staked?.weightedStake ?? 0n
+		const stakePreview = currentStaked + amt
+		// tier multiplier at preview stake
+		let tierM = SCALE
+		const t = tiers
+		if (t && t[0].length > 0) {
+			const thresholds = t[0]
+			const multipliers = t[1]
+			for (let i = 0; i < thresholds.length; i++) {
+				if (stakePreview >= thresholds[i]) tierM = multipliers[i]
+			}
+		}
+		// lock boost for selected days: 1e18 .. 3e18 linearly
+		const lockM = SCALE + ((SCALE * 2n) * BigInt(Math.max(0, Math.min(365, lockDays)))) / 365n
+		const m = tierM >= lockM ? tierM : lockM
+		const previewWeighted = (stakePreview * m) / SCALE
+		// denominator: replace current weighted with preview weighted
+		let denom = _totalWeighted
+		if (denom > 0n) {
+			denom = denom - currentWeighted + previewWeighted
+		}
+		if (denom <= 0n) {
+			return { perSec: 0n, day: 0n, week: 0n, month: 0n, usdDay: 0, usdWeek: 0, usdMonth: 0 }
+		}
+		const perSec = (_rewardRate * previewWeighted) as bigint / denom
+		const day = perSec * 86400n
+		const week = perSec * (86400n * 7n)
+		const month = perSec * (86400n * 30n)
+		const price = parseFloat(previewPriceUsd || '0') || 0
+		const toNum = (wei: bigint) => Number(formatUnits(wei, TOKEN_DECIMALS))
+		const usdDay = toNum(day) * price
+		const usdWeek = toNum(week) * price
+		const usdMonth = toNum(month) * price
+		return { perSec, day, week, month, usdDay, usdWeek, usdMonth }
+	}, [amountBN, lockDays, staked?.staked, staked?.weightedStake, tiers, _rewardRate, _totalWeighted, TOKEN_DECIMALS, previewPriceUsd])
+
 	// Graph data: show relative mining speed = stake * multiplier (scaled)
 	const graphPoints = useMemo(() => {
 		const res: { x: number; y: number }[] = []
@@ -274,6 +319,32 @@ const { data: _totalWeighted } = useReadContract({
 			<div className="text-center">
 				<div className="text-xs opacity-70">Mined $RANDY (live)</div>
 				<div className="sp-title text-2xl text-yellow-300">{formatUnits(liveEarned, TOKEN_DECIMALS)}</div>
+			</div>
+
+			{/* Preview panel */}
+			<div className="border border-yellow-400/60 rounded p-4 mt-2">
+				<div className="text-center mb-3">
+					<label className="text-xs opacity-70 block">Preview price (USD)</label>
+					<input value={previewPriceUsd} onChange={(e)=>setPreviewPriceUsd(e.target.value)} placeholder="e.g. 0.001" className="mx-auto block sp-title text-xl text-yellow-300 w-40 border rounded px-3 py-2 border-yellow-400 bg-yellow-400/10 text-center" />
+				</div>
+				<div className="grid grid-cols-3 gap-4 text-center">
+					<div>
+						<div className="text-xs opacity-70">Tokens / day</div>
+						<div className="sp-title text-xl text-yellow-300">{formatUnits(preview.day, TOKEN_DECIMALS)}</div>
+						<div className="text-xs text-yellow-200">${preview.usdDay.toFixed(2)}</div>
+					</div>
+					<div>
+						<div className="text-xs opacity-70">Tokens / 7d</div>
+						<div className="sp-title text-xl text-yellow-300">{formatUnits(preview.week, TOKEN_DECIMALS)}</div>
+						<div className="text-xs text-yellow-200">${preview.usdWeek.toFixed(2)}</div>
+					</div>
+					<div>
+						<div className="text-xs opacity-70">Tokens / 30d</div>
+						<div className="sp-title text-xl text-yellow-300">{formatUnits(preview.month, TOKEN_DECIMALS)}</div>
+						<div className="text-xs text-yellow-200">${preview.usdMonth.toFixed(2)}</div>
+					</div>
+				</div>
+				<p className="text-[11px] text-yellow-200 text-center mt-3">Estimates assume current network totals remain constant and reward rate doesn’t change. Real earnings vary as other miners stake/lock.</p>
 			</div>
 
 			{/* Simple SVG graph of mining speed vs stake */}
