@@ -7,6 +7,12 @@ import memeToken from '@/lib/MemeToken.json'
 import type { Abi } from 'viem'
 import { formatUnits, parseUnits, maxUint256 } from 'viem'
 import Image from 'next/image'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogActions from '@mui/material/DialogActions'
+import Button from '@mui/material/Button'
+import Typography from '@mui/material/Typography'
 
 const MINER_ADDRESS = process.env.NEXT_PUBLIC_MINER_ADDRESS as `0x${string}` | undefined
 const TOKEN_ADDRESS = process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}` | undefined
@@ -23,6 +29,7 @@ export default function MinerPage() {
 	const [lockDays, setLockDays] = useState<number>(0)
 	const [liveEarned, setLiveEarned] = useState<bigint>(0n)
 	const [previewPriceUsd, setPreviewPriceUsd] = useState<string>('')
+	const [showNoBalance, setShowNoBalance] = useState(false)
 
 	// Reads
 	const { data: staked } = useReadContract({
@@ -92,9 +99,7 @@ const { data: _totalWeighted } = useReadContract({
 	// DEX buy link (Base)
 	const buyUrl = useMemo(() => {
 		if (!TOKEN_ADDRESS) return undefined
-		// Use Uniswap v2/permutations friendly aggregator like Baseswap or Uniswap interface if available
-		// Fallback to basescan token page
-		return `https://basescan.org/token/${TOKEN_ADDRESS}`
+		return `https://app.uniswap.org/swap?chain=base&outputCurrency=${TOKEN_ADDRESS}`
 	}, [])
 
 	// Writes
@@ -163,6 +168,11 @@ const { data: _totalWeighted } = useReadContract({
 		}, 1000)
 		return () => clearInterval(id)
 	}, [earned, _rewardRate, _totalWeighted, staked?.staked, _userMult])
+
+	// Show no-balance dialog when connected and holds zero
+	useEffect(() => {
+		if (address && balance && balance.value === 0n) setShowNoBalance(true)
+	}, [address, balance])
 
 	// ===== Preview calculations (before locking) =====
 	const preview = useMemo(() => {
@@ -361,6 +371,22 @@ const { data: _totalWeighted } = useReadContract({
 					</svg>
 				</div>
 			)}
+
+			{/* Zero-balance popup */}
+			<Dialog open={showNoBalance} onClose={() => setShowNoBalance(false)}>
+				<DialogTitle className="sp-title text-yellow-300">Mine $Randy</DialogTitle>
+				<DialogContent>
+					<Typography variant="body2" className="!text-yellow-200">
+						You must own $Randy to mine for $Randy. Buy $Randy on Uniswap to get started.
+					</Typography>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setShowNoBalance(false)}>Dismiss</Button>
+					{buyUrl && (
+						<Button variant="contained" color="secondary" onClick={() => window.open(buyUrl, '_blank')}>Buy on Uniswap</Button>
+					)}
+				</DialogActions>
+			</Dialog>
 		</main>
 	)
 }

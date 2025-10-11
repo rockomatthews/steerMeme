@@ -18,9 +18,10 @@ export default function Home() {
 					<a
 						href={buyUrl}
 						target="_blank"
-						className="px-6 py-3 rounded text-xl font-extrabold border-2 border-green-400 text-green-300 bg-green-400/10 hover:bg-green-400/20 shadow-[0_0_20px_rgba(74,222,128,0.35)] sp-btn"
+						className="sp-btn w-full max-w-3xl flex items-center justify-center gap-4 px-5 py-4 rounded border-4 border-[#ff2db2] bg-black text-[#ff2db2] shadow-[0_0_35px_rgba(255,45,178,0.55)] hover:bg-[#ff2db2]/10"
 					>
-						Buy $RANDY
+						<Image src="/uniswap%20logo.png" alt="Uniswap" width={44} height={44} className="rounded" />
+						<span className="text-2xl">BUY $RANDY ON UNISWAP!</span>
 					</a>
 				)}
 				<Link href="/miner" className="px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Open Miner</Link>
