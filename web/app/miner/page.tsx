@@ -254,7 +254,7 @@ const { data: _totalWeighted } = useReadContract({
 				</div>
 			</div>
 
-			<div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-center place-items-center">
+			<div className="grid grid-cols-1 gap-4 text-center place-items-center w-full max-w-xl mx-auto">
 				<div>
 					<div className="text-xs opacity-70">Connected</div>
 					<div className="sp-title text-xl text-yellow-300 break-all">{address || '—'}</div>
