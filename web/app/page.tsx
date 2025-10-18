@@ -13,19 +13,19 @@ export default function Home() {
 			<Image src="/randy.png" alt="Randy" width={128} height={128} priority />
 			<h1 className="text-3xl font-bold text-yellow-300 sp-title">Randy Mining</h1>
 			<p className="opacity-80 text-yellow-200">The more you stake, the faster you mine</p>
-			<div className="flex gap-4 flex-wrap items-center justify-center">
+			<div className="flex flex-col gap-4 items-center justify-center w-full">
 				{buyUrl && (
 					<a
 						href={buyUrl}
 						target="_blank"
-						className="sp-btn w-full max-w-3xl flex items-center justify-center gap-4 px-5 py-4 rounded border-4 border-[#ff2db2] bg-black text-[#ff2db2] shadow-[0_0_35px_rgba(255,45,178,0.55)] hover:bg-[#ff2db2]/10"
+						className="sp-btn w-full max-w-[500px] flex items-center justify-center gap-4 px-5 py-4 rounded border-4 border-[#ff2db2] bg-black text-[#ff2db2] shadow-[0_0_35px_rgba(255,45,178,0.55)] hover:bg-[#ff2db2]/10"
 					>
 						<Image src="/uniswap%20logo.png" alt="Uniswap" width={44} height={44} className="rounded" />
 						<span className="text-2xl">BUY $RANDY ON UNISWAP!</span>
 					</a>
 				)}
-				<Link href="/miner" className="px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Open Miner</Link>
-				<Link href="/launch" className="px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Launch your own token!</Link>
+				<Link href="/miner" className="w-full max-w-[500px] flex items-center justify-center px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Open Miner</Link>
+				<Link href="/launch" className="w-full max-w-[500px] flex items-center justify-center px-6 py-3 rounded text-xl font-extrabold border-2 border-yellow-400 text-yellow-300 bg-yellow-400/10 hover:bg-yellow-400/20 shadow-[0_0_20px_rgba(250,204,21,0.35)] sp-btn">Launch your own token!</Link>
 			</div>
 
 			<TokensWall />
